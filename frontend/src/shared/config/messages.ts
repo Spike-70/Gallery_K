@@ -15,6 +15,7 @@ export const actions = {
   backGallery: '갤러리 화면으로',
   backPrev: '이전 화면으로',
   backAdmin: '관리자 화면으로',
+  backLogin: '로그인 화면으로',
   backSettings: '설정으로',
   backArchive: '지난 전시 목록으로',
   backThisExhibition: '이 전시로',
@@ -80,6 +81,7 @@ export const screenTitles = {
   signup: "'갤러리 K'는",
   passwordReset: '비밀번호 재설정',
   passwordChange: '비밀번호 변경',
+  socialLink: '계정 연결',
   archive: '지난 전시',
   settings: '설정',
   adminMembers: '회원 관리',
@@ -169,6 +171,27 @@ export const screens = {
     hidePassword: '비밀번호 숨기기',
   },
 
+  social: {
+    divider: '또는',
+    /** `카카오로 시작하기` — 제공자 이름은 서버가 준 `label`이다 */
+    startWith: (label: string) => `${label}로 시작하기`,
+    linkWith: (label: string) => `${label} 연결하기`,
+    linkedWith: (label: string) => `${label} 연결됨`,
+    unlink: '해제',
+    unlinked: '연결을 해제했습니다.',
+    section: '연결된 로그인',
+    lastIdentityHint: '마지막 로그인 수단은 해제할 수 없습니다.',
+    /** A-4 상단 안내. 어느 제공자로 들어왔는지 먼저 알려 준다 */
+    linkIntro: (label: string) => `${label} 계정으로 들어오셨습니다.`,
+    linkExistingGuide: '쓰시던 전화번호와 비밀번호를 넣으면 이 계정에 연결됩니다.',
+    linkNewGuide: '전화번호와 이름만 넣으면 바로 시작하실 수 있습니다.',
+    toExisting: '이미 회원이신가요? 기존 계정에 연결하기',
+    toNew: '처음이신가요? 새로 시작하기',
+    submitLink: '연결하기',
+    submitNew: '시작하기',
+    expired: '연결 시간이 지났습니다. 처음부터 다시 시도해 주세요.',
+  },
+
   signup: {
     intro: [
       '갤러리 K는 매일 아침 12점의 그림이 걸리는 작은 미술관입니다.',
@@ -222,6 +245,7 @@ export const screens = {
   },
 
   settings: {
+    socialSection: '연결된 로그인',
     notifySection: '알림',
     notifyToggle: '아침 알림',
     notifyTime: '알림 시각',

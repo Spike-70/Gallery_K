@@ -1,23 +1,14 @@
+import { endpoints } from '@/shared/api/endpoints'
+import { httpClient } from '@/shared/api/httpClient'
 import type { RawArtworkDetailResponse } from '@/shared/api/types'
-// [API]
-// import { endpoints } from '@/shared/api/endpoints'
-// import { httpClient } from '@/shared/api/httpClient'
 import type { Uuid } from '@/shared/types/utility'
 
 import { toArtworkView } from '@/entities/artwork/api/mappers'
 import type { ArtworkView } from '@/entities/artwork/model/types'
 
-// [MOCK]
-import * as artworkMock from '@/mocks/handlers/artworkHandlers'
-
 /** `GET /artworks/{id}` — API 명세서 §7.5 */
 export async function fetchArtwork(artworkId: Uuid): Promise<ArtworkView> {
-  // [API]
-  // const raw = await httpClient.get<RawArtworkDetailResponse>(endpoints.artworks.detail(artworkId))
-  // return toArtworkView(raw)
-
-  // [MOCK]
-  const raw: RawArtworkDetailResponse = await artworkMock.getArtwork(artworkId)
+  const raw = await httpClient.get<RawArtworkDetailResponse>(endpoints.artworks.detail(artworkId))
   return toArtworkView(raw)
 }
 
@@ -27,12 +18,9 @@ export async function fetchArtwork(artworkId: Uuid): Promise<ArtworkView> {
  */
 export async function logArtworkView(artworkId: Uuid): Promise<number | null> {
   try {
-    // [API]
-    // const raw = await httpClient.post<{ viewed_artwork_count: number }>(endpoints.artworks.view(artworkId))
-    // return raw.viewed_artwork_count
-
-    // [MOCK]
-    const raw = await artworkMock.logArtworkView(artworkId)
+    const raw = await httpClient.post<{ viewed_artwork_count: number }>(
+      endpoints.artworks.view(artworkId),
+    )
     return raw.viewed_artwork_count
   } catch {
     return null

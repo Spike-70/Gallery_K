@@ -52,6 +52,13 @@ class ErrorCode:
     PASSWORD_CURRENT_MISMATCH: Final = "PASSWORD_CURRENT_MISMATCH"
     RESET_CODE_INVALID: Final = "RESET_CODE_INVALID"
     RESET_CODE_EXPIRED: Final = "RESET_CODE_EXPIRED"
+    SOCIAL_PROVIDER_UNKNOWN: Final = "SOCIAL_PROVIDER_UNKNOWN"
+    SOCIAL_DISABLED: Final = "SOCIAL_DISABLED"
+    SOCIAL_STATE_INVALID: Final = "SOCIAL_STATE_INVALID"
+    SOCIAL_EXCHANGE_FAILED: Final = "SOCIAL_EXCHANGE_FAILED"
+    SOCIAL_LINK_EXPIRED: Final = "SOCIAL_LINK_EXPIRED"
+    SOCIAL_ALREADY_LINKED: Final = "SOCIAL_ALREADY_LINKED"
+    SOCIAL_LAST_IDENTITY: Final = "SOCIAL_LAST_IDENTITY"
 
     # §5.3 전시·그림
     EXHIBITION_NOT_FOUND: Final = "EXHIBITION_NOT_FOUND"
@@ -140,6 +147,36 @@ CATALOG: Final[dict[str, ErrorSpec]] = {
         _spec(ErrorCode.PASSWORD_CURRENT_MISMATCH, 401, "현재 비밀번호가 맞지 않습니다.", False),
         _spec(ErrorCode.RESET_CODE_INVALID, 422, "인증번호가 맞지 않습니다.", False, "attempts_left"),
         _spec(ErrorCode.RESET_CODE_EXPIRED, 422, "인증번호가 만료되었습니다. 다시 받아 주세요.", False),
+        # §5.2 소셜 로그인 (소셜 문서 §10)
+        _spec(ErrorCode.SOCIAL_PROVIDER_UNKNOWN, 404, "지원하지 않는 로그인 방식입니다.", False, "provider"),
+        _spec(ErrorCode.SOCIAL_DISABLED, 503, "지금은 이 방식으로 로그인할 수 없습니다.", True, "provider"),
+        _spec(
+            ErrorCode.SOCIAL_STATE_INVALID,
+            400,
+            "로그인 요청이 만료되었습니다. 처음부터 다시 시도해 주세요.",
+            False,
+        ),
+        _spec(
+            ErrorCode.SOCIAL_EXCHANGE_FAILED,
+            502,
+            "로그인 제공자와 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+            True,
+            "provider",
+        ),
+        _spec(
+            ErrorCode.SOCIAL_LINK_EXPIRED,
+            400,
+            "연결 시간이 지났습니다. 처음부터 다시 시도해 주세요.",
+            False,
+        ),
+        # 어느 계정에 연결되어 있는지는 알려주지 않는다 — 회원 명단 조회 수단이 된다(SA-5).
+        _spec(ErrorCode.SOCIAL_ALREADY_LINKED, 409, "이미 다른 계정에 연결된 소셜 계정입니다.", False),
+        _spec(
+            ErrorCode.SOCIAL_LAST_IDENTITY,
+            409,
+            "마지막 로그인 수단은 해제할 수 없습니다. 비밀번호를 먼저 설정해 주세요.",
+            False,
+        ),
         # §5.3
         _spec(ErrorCode.EXHIBITION_NOT_FOUND, 404, "전시를 찾을 수 없습니다.", False, "date"),
         _spec(ErrorCode.EXHIBITION_NOT_OPENED, 404, "첫 전시를 준비하고 있습니다.", False),

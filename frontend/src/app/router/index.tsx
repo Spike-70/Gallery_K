@@ -41,6 +41,9 @@ const PasswordResetPage = lazyRoute(() =>
 const PasswordChangePage = lazyRoute(() =>
   import('@/features/auth').then((module) => ({ default: module.PasswordChangePage })),
 )
+const SocialLinkPage = lazyRoute(() =>
+  import('@/features/auth').then((module) => ({ default: module.SocialLinkPage })),
+)
 const ExhibitionThemePage = lazyRoute(() =>
   import('@/features/exhibition-theme').then((module) => ({ default: module.ExhibitionThemePage })),
 )
@@ -113,6 +116,12 @@ export const router = createBrowserRouter([
             ),
           },
           { path: paths.passwordReset, element: <PasswordResetPage /> },
+          /**
+           * A-4 계정 연결. **`RedirectIfAuthed`를 씌우지 않는다** — 이미 로그인한
+           * 사람이 다른 소셜 계정을 연결하러 올 수 있고, 서버의 연결 티켓이
+           * 유일한 통행증이다(소셜 문서 §5).
+           */
+          { path: paths.socialLink, element: <SocialLinkPage /> },
           {
             path: paths.passwordChange,
             element: (

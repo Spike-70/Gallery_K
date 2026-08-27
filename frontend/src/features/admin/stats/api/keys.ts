@@ -8,7 +8,8 @@ import type { Uuid } from '@/shared/types/utility'
 
 export const statsKeys = {
   all: ['admin', 'stats'] as const,
-  daily: (days: number) => ['admin', 'stats', 'daily', days] as const,
+  /** 조회 창은 서버가 정한다(최근 7일). 키에 날짜를 넣지 않는다 — 단말 시계를 읽게 된다. */
+  daily: () => ['admin', 'stats', 'daily'] as const,
   memberSearch: (query: string) => ['admin', 'stats', 'search', query] as const,
   member: (memberId: Uuid, days: number) => ['admin', 'stats', 'member', memberId, days] as const,
 }

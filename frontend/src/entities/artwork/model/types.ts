@@ -24,7 +24,8 @@ export type ArtworkSummary = {
   artist: string
   /** 대체 텍스트 구성용. 그리드에 시각적으로 표시하지 않는다 */
   title: string
-  image: ImageSet
+  /** 아직 올라오지 않은 자리는 `null`이다. `ArtworkImage`가 자리표시자를 그린다 */
+  image: ImageSet | null
   /** 이 회원이 **이 전시에서** 이미 열어봤는지 */
   isViewed: boolean
 }

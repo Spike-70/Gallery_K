@@ -25,6 +25,19 @@ class FontScale(StrEnum):
 class CreatedVia(StrEnum):
     SELF = "self"
     CURATOR = "curator"
+    #: 소셜 인증 후 A-4 계정 연결 화면에서 만들어진 계정. 비밀번호가 없다.
+    SOCIAL = "social"
+
+
+class SocialProvider(StrEnum):
+    """지원 제공자 (소셜 문서 §6).
+
+    제공자 추가는 여기에 값을 넣고 `config/oauth.py`에 서술자 하나를 더하는 일이다.
+    흐름 코드는 제공자를 모른다(SA-4).
+    """
+
+    KAKAO = "kakao"
+    GOOGLE = "google"
 
 
 class ImageStatus(StrEnum):

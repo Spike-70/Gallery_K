@@ -258,6 +258,7 @@ frontend/
 | `/signup` | D. 회원가입 | Plain | 로그인 시 `/gallery`로 | 지연 |
 | `/password/reset` | A-2. 재설정 (v1.1) | Plain | — | 지연 |
 | `/password/change` | 비밀번호 변경 | Plain | 회원 | 지연 |
+| `/auth/link` | A-4. 계정 연결 | Plain | 연결 티켓(서버 쿠키) | 지연 |
 | `/gallery` | C. 갤러리(현재 전시) | Gallery | 회원 | 초기 |
 | `/gallery/theme` | C-1. 전시 테마 | Gallery | 회원 | 지연 |
 | `/gallery/artworks/:artworkId` | C-2. 그림 | Gallery | 회원 | 초기 |

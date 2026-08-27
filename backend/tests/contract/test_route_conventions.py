@@ -92,7 +92,7 @@ def test_error_catalog_is_the_only_source_of_codes() -> None:
 
     with pytest.raises(LookupError):
         AppError("MADE_UP_CODE")
-    assert len(CATALOG) == 43
+    assert len(CATALOG) == 50
 
 
 def test_decorator_injected_arguments_match_view_signatures() -> None:

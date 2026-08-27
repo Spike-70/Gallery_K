@@ -56,7 +56,8 @@ export function useArtworkNavigation(view: ArtworkView | undefined) {
       for (const id of [prevId, nextId]) {
         if (!id) continue
         const cached = queryClient.getQueryData<ArtworkView>(artworkKeys.detail(id))
-        if (!cached) continue
+        // 아직 올라오지 않은 자리는 받을 주소가 없다(미리보기 경로).
+        if (!cached?.artwork.image) continue
         const image = new Image()
         image.src = cached.artwork.image.displayUrl
       }

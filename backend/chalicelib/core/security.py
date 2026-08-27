@@ -10,6 +10,7 @@ from __future__ import annotations
 import base64
 import datetime as _dt
 import hashlib
+import secrets
 import uuid
 from dataclasses import dataclass
 from typing import Any, Final
@@ -18,6 +19,8 @@ import bcrypt
 import jwt
 
 from chalicelib.config.constants import (
+    OAUTH_LINK_COOKIE_NAME,
+    OAUTH_STATE_COOKIE_NAME,
     SESSION_COOKIE_MAX_AGE_SECONDS,
     SESSION_COOKIE_NAME,
     SESSION_COOKIE_PATH,
@@ -148,6 +151,23 @@ def build_session_cookie(token: str, *, max_age_seconds: int = SESSION_COOKIE_MA
     return "; ".join(attributes)
 
 
+def _cookie(name: str, value: str, *, max_age_seconds: int) -> str:
+    attributes = [
+        f"{name}={value}",
+        f"Path={SESSION_COOKIE_PATH}",
+        f"Max-Age={max_age_seconds}",
+        # `Lax`가 소셜 리다이렉트를 견딘다 — 제공자에서 돌아오는 길은 top-level GET
+        # 내비게이션이라 쿠키가 함께 간다(소셜 문서 §2). 팝업·iframe이었다면
+        # `SameSite=None`으로 내려야 했고 그 순간 CSRF 방어 한 겹이 사라진다.
+        f"SameSite={SESSION_COOKIE_SAMESITE}",
+        "HttpOnly",
+    ]
+    # 로컬 http 개발에서 Secure를 붙이면 브라우저가 쿠키를 버린다.
+    if settings.is_production:
+        attributes.append("Secure")
+    return "; ".join(attributes)
+
+
 def build_expired_session_cookie() -> str:
     attributes = [
         f"{SESSION_COOKIE_NAME}=",
@@ -169,3 +189,157 @@ def read_cookie(cookie_header: str | None, name: str) -> str | None:
         if key == name:
             return value or None
     return None
+
+
+# ── 소셜 로그인 임시 쿠키 (소셜 문서 §4) ───────────────────────────────────
+#
+# `state`·`code_verifier`·`nonce`를 DB가 아니라 **서명 쿠키**에 둔다. Lambda는 인스턴스
+# 메모리를 신뢰할 수 없고(백엔드 문서 §4), 이 값들은 10분 뒤 무의미해진다. DB에 두면
+# 만료 행을 지우는 정리 작업이 하나 더 생긴다. 서명 쿠키는 만료가 곧 소멸이다.
+
+#: 임시 쿠키 JWT의 용도 구분. 인가 왕복 티켓을 연결 티켓으로 쓰는 혼선을 막는다.
+_PURPOSE_OAUTH: Final = "oauth_state"
+_PURPOSE_LINK: Final = "oauth_link"
+
+
+def new_state_secret() -> str:
+    """`state`·`nonce`·`code_verifier`의 원천. URL-safe 43자(256비트)."""
+    return secrets.token_urlsafe(32)
+
+
+def code_challenge_of(code_verifier: str) -> str:
+    """PKCE S256 (RFC 7636 §4.2). `plain`은 쓰지 않는다 — 그러면 PKCE가 무의미하다."""
+    digest = hashlib.sha256(code_verifier.encode("ascii")).digest()
+    return base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii")
+
+
+def _encode_ticket(payload: dict[str, Any], *, purpose: str, ttl_seconds: int) -> str:
+    now = now_utc()
+    claims = {
+        **payload,
+        "purpose": purpose,
+        "iat": int(now.timestamp()),
+        "exp": int((now + _dt.timedelta(seconds=ttl_seconds)).timestamp()),
+        "jti": new_request_id(),
+    }
+    return jwt.encode(claims, settings.jwt_secret, algorithm=settings.jwt_algorithm)
+
+
+def _decode_ticket(token: str, *, purpose: str) -> dict[str, Any] | None:
+    """만료·위조·용도 불일치를 **모두 `None`으로** 접는다.
+
+    호출부가 사유별로 분기할 이유가 없다 — 셋 다 "처음부터 다시 하세요"로 끝난다.
+    """
+    try:
+        claims: dict[str, Any] = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
+    except jwt.InvalidTokenError:
+        return None
+    if claims.get("purpose") != purpose:
+        return None
+    return claims
+
+
+@dataclass(frozen=True, slots=True)
+class OAuthTicket:
+    """인가 왕복 동안 서버가 기억해야 하는 것 전부."""
+
+    provider: str
+    state: str
+    code_verifier: str
+    nonce: str
+    next_path: str
+
+
+def build_oauth_state_cookie(ticket: OAuthTicket, *, ttl_seconds: int) -> str:
+    token = _encode_ticket(
+        {
+            "provider": ticket.provider,
+            "state": ticket.state,
+            "verifier": ticket.code_verifier,
+            "nonce": ticket.nonce,
+            "next": ticket.next_path,
+        },
+        purpose=_PURPOSE_OAUTH,
+        ttl_seconds=ttl_seconds,
+    )
+    return _cookie(OAUTH_STATE_COOKIE_NAME, token, max_age_seconds=ttl_seconds)
+
+
+def read_oauth_state_ticket(token: str | None) -> OAuthTicket | None:
+    if not token:
+        return None
+    claims = _decode_ticket(token, purpose=_PURPOSE_OAUTH)
+    if claims is None:
+        return None
+    try:
+        return OAuthTicket(
+            provider=str(claims["provider"]),
+            state=str(claims["state"]),
+            code_verifier=str(claims["verifier"]),
+            nonce=str(claims["nonce"]),
+            next_path=str(claims["next"]),
+        )
+    except KeyError:
+        return None
+
+
+@dataclass(frozen=True, slots=True)
+class LinkTicket:
+    """A-4 화면이 들고 있는 것.
+
+    **어떤 계정에 연결할지는 담지 않는다.** 그것은 전화번호와 비밀번호로 증명한다 —
+    티켓만 훔쳐서는 아무 계정도 가져갈 수 없다(소셜 문서 §4).
+    """
+
+    provider: str
+    provider_uid: str
+    email: str | None
+    display_name: str | None
+    next_path: str
+
+
+def build_oauth_link_cookie(ticket: LinkTicket, *, ttl_seconds: int) -> str:
+    token = _encode_ticket(
+        {
+            "provider": ticket.provider,
+            "uid": ticket.provider_uid,
+            "email": ticket.email,
+            "display_name": ticket.display_name,
+            "next": ticket.next_path,
+        },
+        purpose=_PURPOSE_LINK,
+        ttl_seconds=ttl_seconds,
+    )
+    return _cookie(OAUTH_LINK_COOKIE_NAME, token, max_age_seconds=ttl_seconds)
+
+
+def read_oauth_link_ticket(token: str | None) -> LinkTicket | None:
+    if not token:
+        return None
+    claims = _decode_ticket(token, purpose=_PURPOSE_LINK)
+    if claims is None:
+        return None
+    try:
+        return LinkTicket(
+            provider=str(claims["provider"]),
+            provider_uid=str(claims["uid"]),
+            email=claims.get("email"),
+            display_name=claims.get("display_name"),
+            next_path=str(claims.get("next") or "/gallery"),
+        )
+    except KeyError:
+        return None
+
+
+def build_expired_cookie(name: str) -> str:
+    """임시 쿠키는 **쓰는 즉시 지운다.** 재사용이 곧 리플레이다."""
+    attributes = [
+        f"{name}=",
+        f"Path={SESSION_COOKIE_PATH}",
+        "Max-Age=0",
+        f"SameSite={SESSION_COOKIE_SAMESITE}",
+        "HttpOnly",
+    ]
+    if settings.is_production:
+        attributes.append("Secure")
+    return "; ".join(attributes)

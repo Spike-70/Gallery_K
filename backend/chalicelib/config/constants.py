@@ -32,6 +32,11 @@ SESSION_COOKIE_SAMESITE: Final = "Lax"
 #: 만료가 이 값 이내로 남으면 응답에서 자동 재발급한다 (슬라이딩 세션)
 SESSION_SLIDING_RENEW_WITHIN_SECONDS: Final = 2_592_000  # 30일
 
+#: 소셜 인가 왕복용 임시 쿠키 (소셜 문서 §4). 둘 다 HttpOnly·SameSite=Lax·TTL 10분이며
+#: 쓰는 즉시 삭제된다. 세션 쿠키와 이름 공간을 나눠 두어 혼동을 막는다.
+OAUTH_STATE_COOKIE_NAME: Final = "gk_oauth"
+OAUTH_LINK_COOKIE_NAME: Final = "gk_oauth_link"
+
 MUTATING_METHODS: Final = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 
 # ── 시간 (DB 문서 §2) ──────────────────────────────────────────────────────

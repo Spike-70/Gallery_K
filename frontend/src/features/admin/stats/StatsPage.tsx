@@ -6,7 +6,6 @@ import { statsKeys } from '@/features/admin/stats/api/keys'
 import { fetchDailyStats, searchMembers } from '@/features/admin/stats/api/statsApi'
 import { resolveErrorMessage } from '@/shared/api/errorMessages'
 import { CACHE_POLICY } from '@/shared/api/queryClient'
-import { STATS_DAILY_DAYS } from '@/shared/config/constants'
 import { actions, screenTitles, screens, status, templates } from '@/shared/config/messages'
 import { paths } from '@/shared/config/paths'
 import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue'
@@ -22,8 +21,8 @@ export function StatsPage() {
   const debounced = useDebouncedValue(search, 300)
 
   const dailyQuery = useQuery({
-    queryKey: statsKeys.daily(STATS_DAILY_DAYS),
-    queryFn: () => fetchDailyStats(STATS_DAILY_DAYS),
+    queryKey: statsKeys.daily(),
+    queryFn: fetchDailyStats,
     ...CACHE_POLICY.stats,
   })
 

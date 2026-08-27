@@ -16,6 +16,8 @@ export const paths = {
   signup: '/signup',
   passwordReset: '/password/reset',
   passwordChange: '/password/change',
+  /** A-4 계정 연결. 소셜 콜백이 미연결일 때 서버가 여기로 보낸다(소셜 문서 §3) */
+  socialLink: '/auth/link',
 
   gallery: '/gallery',
   galleryTheme: '/gallery/theme',
@@ -55,4 +57,14 @@ export const routePatterns = {
 /** 로그인 후 되돌아갈 경로를 담는다 — `RequireAuth`가 사용한다 */
 export function loginPathWithNext(next: string): string {
   return `${paths.login}?next=${encodeURIComponent(next)}`
+}
+
+/**
+ * 소셜 인가 시작 주소 — **라우터가 아니라 서버로 나가는 절대 경로다.**
+ *
+ * `startUrl`은 서버가 준 값을 그대로 쓴다(`/api/auth/social/{provider}/start`).
+ * 프런트가 조립하면 배포에서 붙는 `/api` 접두를 두 곳이 알게 된다.
+ */
+export function socialStartUrl(startUrl: string, next: string): string {
+  return `${startUrl}?next=${encodeURIComponent(next)}`
 }

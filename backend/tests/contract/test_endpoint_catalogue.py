@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-#: API 문서 §4 총람 49행. (메서드, 경로, 권한)
+#: API 문서 §4 총람 56행. (메서드, 경로, 권한)
 DOCUMENTED: list[tuple[str, str, str]] = [
     ("GET", "/public/landing", "PUBLIC"),
     ("GET", "/public/notice", "PUBLIC"),
@@ -20,6 +20,11 @@ DOCUMENTED: list[tuple[str, str, str]] = [
     ("POST", "/auth/password", "MEMBER"),
     ("POST", "/auth/password/reset/request", "PUBLIC"),
     ("POST", "/auth/password/reset/confirm", "PUBLIC"),
+    ("GET", "/auth/social/providers", "PUBLIC"),
+    ("GET", "/auth/social/{provider}/start", "PUBLIC"),
+    ("GET", "/auth/social/{provider}/callback", "PUBLIC"),
+    ("POST", "/auth/social/link", "PUBLIC"),
+    ("POST", "/auth/social/signup", "PUBLIC"),
     ("GET", "/exhibitions/current", "MEMBER"),
     ("GET", "/exhibitions/{date}", "MEMBER"),
     ("GET", "/exhibitions", "MEMBER"),
@@ -32,6 +37,8 @@ DOCUMENTED: list[tuple[str, str, str]] = [
     ("POST", "/me/push-subscriptions", "MEMBER"),
     ("GET", "/me/push-subscriptions", "MEMBER"),
     ("DELETE", "/me/push-subscriptions/{subscription_id}", "MEMBER"),
+    ("GET", "/me/social-identities", "MEMBER"),
+    ("DELETE", "/me/social-identities/{identity_id}", "MEMBER"),
     ("GET", "/admin/summary", "CURATOR"),
     ("GET", "/admin/exhibitions/calendar", "CURATOR"),
     ("GET", "/admin/exhibitions/{date}", "CURATOR"),
@@ -74,8 +81,8 @@ def _implemented() -> dict[tuple[str, str], str | None]:
     return {(entry.method, entry.path): entry.meta.access for entry in REGISTRY}
 
 
-def test_the_documented_table_has_forty_nine_rows() -> None:
-    assert len(DOCUMENTED) == 49
+def test_the_documented_table_matches_the_spec_row_count() -> None:
+    assert len(DOCUMENTED) == 56
 
 
 def test_every_documented_endpoint_is_implemented() -> None:

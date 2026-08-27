@@ -24,6 +24,18 @@ make serve                    # http://localhost:8000
 로컬 `chalice local`에는 API Gateway 스테이지 접두가 붙지 않는다. 배포 환경에서만
 `/api`가 붙는다(CloudFront가 `/api/*`를 API Gateway로 보낸다).
 
+소셜 로그인(카카오·구글)은 **리다이렉트 방식**이며 콜백 URI는 아래 한 형태뿐이다
+(`docs/08-SOCIAL-AUTH.md` §7). 제공자 콘솔에 **글자 그대로** 등록한다.
+
+```
+{SOCIAL_REDIRECT_BASE_URL}/api/auth/social/{kakao|google}/callback
+```
+
+로컬에서는 오리진이 **5173**이다 — Vite dev 서버가 `/api`를 8000으로 프록시하므로
+브라우저가 보는 오리진은 하나뿐이고, 8000을 등록하면 쿠키가 다른 오리진에 심겨
+세션이 성립하지 않는다. `client_id`가 없는 제공자는 목록에서 빠지고 화면에 버튼도
+뜨지 않는다.
+
 프런트가 다른 포트(`localhost:5173`)에서 뜨므로 로컬에서만 CORS를 연다. `DEV_CORS_ORIGIN`이
 비어 있으면(=프로덕션) 관련 헤더를 **하나도** 붙이지 않는다 — 동일 오리진 배포이므로
 프리플라이트가 발생하지 않는다(API 문서 §2.11).

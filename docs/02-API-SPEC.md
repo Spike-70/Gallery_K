@@ -64,6 +64,16 @@
 
 성공·실패의 키 집합이 **완전히 동일**하다. 프런트엔드는 `success` 하나만 보고 분기하며, 타입 정의도 판별 유니온 하나로 끝난다.
 
+**봉투 규약의 예외는 셋뿐이다.**
+
+| 예외 | 응답 | 이유 |
+|---|---|---|
+| `304 Not Modified`(§2.9) | 본문 없음 | 조건부 요청의 정의상 본문을 보내지 않는다 |
+| `GET /auth/social/{provider}/start`(§6.12) | `302` + `Location` | 브라우저 내비게이션의 종착지다. 응답의 본체가 헤더다 |
+| `GET /auth/social/{provider}/callback`(§6.13) | `302` + `Location` | 동상 |
+
+셋 다 **계약 테스트가 이름으로 면제**한다. 면제 목록에 없는 새 경로가 봉투를 벗어나면 빌드가 실패한다.
+
 ### 2.3 `meta` 구조
 
 | 필드 | 타입 | 필수 | 설명 |
@@ -151,7 +161,9 @@
 | 갱신 | 만료 30일 이내이면 응답에서 **자동 재발급**한다(슬라이딩 세션). 클라이언트는 아무 것도 하지 않는다 |
 | 무효화 | `app_user.token_version`과 클레임 `tv`가 다르면 즉시 거부(`401 AUTH_SESSION_REVOKED`) |
 | CSRF | `SameSite=Lax` + 변경 요청에 `X-Requested-With: gallery-k` 헤더 필수. 헤더 없으면 `403 CSRF_HEADER_MISSING` |
-| 미디어 | 별도 자격증명 없음. 이미지 URL 자체가 만료 있는 presigned GET URL이다. §6.10 |
+| 미디어 | 별도 자격증명 없음. 이미지 URL 자체가 만료 있는 presigned GET URL이다. §6.16 |
+| 소셜 로그인 | OAuth 2.0 Authorization Code + PKCE. **리다이렉트 방식만 쓴다**(팝업·iframe 금지). 성립 후에는 위 `gk_session` 쿠키 하나로 수렴하며, 제공자 토큰은 저장하지 않는다. 상세는 `08-SOCIAL-AUTH.md` |
+| 소셜 임시 쿠키 | `gk_oauth`(인가 왕복용 `state`·PKCE·nonce) · `gk_oauth_link`(연결 티켓). 둘 다 `HttpOnly; SameSite=Lax`, TTL 10분, 사용 즉시 삭제 |
 
 **권한 등급**
 
@@ -248,7 +260,7 @@ URL은 **응답 시점에 발급되는 presigned GET URL**이며 만료가 있�
 | `position` | integer | N | 1–12 |
 | `artist` | string | N | C 그리드에는 작가명만 노출(PRD §6.5) |
 | `title` | string | N | 대체 텍스트 구성용. 그리드에 시각적으로 표시하지 않는다 |
-| `image` | ImageSet | N | |
+| `image` | ImageSet | **Y** | 이미지가 아직 `ready`가 아니면 `null`이다. **프런트가 자리표시자를 그린다**(§9.12). 발행된 전시는 12점이 모두 `ready`여야 하므로 관람자 경로에서는 사실상 채워져 있지만, 미리보기는 미완성 상태를 그대로 보여준다 |
 | `is_viewed` | boolean | N | 이 회원이 **이 전시에서** 이미 열어봤는지 |
 
 ### 3.3 `ArtworkDetail` — 그림 상세
@@ -303,6 +315,7 @@ URL은 **응답 시점에 발급되는 presigned GET URL**이며 만료가 있�
 | `notify_enabled` | boolean | N | |
 | `notify_at` | string(HH:MM) | N | |
 | `must_change_password` | boolean | N | true면 프런트가 비밀번호 변경 화면으로 유도 |
+| `has_password` | boolean | N | false면 **소셜로만 로그인하는 계정**이다. D 설정 화면이 비밀번호 변경 항목을 감춘다(소셜 문서 §5.2) |
 | `created_at` | string(datetime) | N | |
 
 ### 3.7 `NoticeItem` — 휴관 공지
@@ -352,6 +365,20 @@ URL은 **응답 시점에 발급되는 presigned GET URL**이며 만료가 있�
 
 `edit_mode`를 **서버가 결정**한다. 백필 금지·이어쓰기 조건은 도메인 규칙이며 프런트가 날짜 비교로 재구현하면 규칙이 두 곳에 존재하게 된다.
 
+### 3.10 `SocialIdentity` — 연결된 외부 계정
+
+| 필드 | 타입 | Null | 설명 |
+|---|---|:---:|---|
+| `id` | string(uuid) | N | |
+| `provider` | string | N | `kakao` \| `google` |
+| `label` | string | N | 화면에 그대로 쓰는 한국어 이름. 예: `카카오` |
+| `email` | string | Y | **항상 null.** `openid` scope만 요청하므로 수집하지 않는다(소셜 문서 §6.1) |
+| `display_name` | string | Y | **항상 null.** 동상 |
+| `linked_at` | string(datetime) | N | |
+| `last_login_at` | string(datetime) | Y | |
+
+**제공자 access token·refresh token은 어떤 응답에도 담기지 않는다.** 로그인이 성립한 뒤 서버가 버린다(소셜 문서 SA-3).
+
 ---
 
 ## 4. 엔드포인트 총람
@@ -367,46 +394,53 @@ URL은 **응답 시점에 발급되는 presigned GET URL**이며 만료가 있�
 | 7 | POST | `/auth/password` | MEMBER | 비밀번호 변경 | MVP |
 | 8 | POST | `/auth/password/reset/request` | PUBLIC | 재설정 인증번호 발송 | v1.1 |
 | 9 | POST | `/auth/password/reset/confirm` | PUBLIC | 인증번호 확인 + 새 비밀번호 | v1.1 |
-| 10 | GET | `/exhibitions/current` | MEMBER | 현재 전시(C 화면) | MVP |
-| 11 | GET | `/exhibitions/{date}` | MEMBER | 특정 발행일 전시 | MVP |
-| 12 | GET | `/exhibitions` | MEMBER | 아카이브 목록(C-3) | MVP |
-| 13 | POST | `/exhibitions/{date}/view` | MEMBER | 입장 기록 | MVP |
-| 14 | GET | `/artworks/{id}` | MEMBER | 그림 상세(C-2) | MVP |
-| 15 | POST | `/artworks/{id}/view` | MEMBER | 그림 열람 기록 | MVP |
-| 16 | GET | `/me` | MEMBER | 내 정보 | MVP |
-| 17 | PATCH | `/me/settings` | MEMBER | 알림·글씨 설정 변경(C-4) | MVP |
-| 18 | DELETE | `/me` | MEMBER | 탈퇴 | MVP |
-| 19 | POST | `/me/push-subscriptions` | MEMBER | 푸시 구독 등록·갱신 | MVP |
-| 20 | GET | `/me/push-subscriptions` | MEMBER | 이 회원의 푸시 구독 목록 | MVP |
-| 21 | DELETE | `/me/push-subscriptions/{id}` | MEMBER | 푸시 구독 해제 | MVP |
-| 22 | GET | `/admin/summary` | CURATOR | B 홈 요약 숫자 | MVP |
-| 23 | GET | `/admin/exhibitions/calendar` | CURATOR | 날짜별 발행 상태(B) | MVP |
-| 24 | GET | `/admin/exhibitions/{date}` | CURATOR | 전시 편집 상태 조회(B-2) | MVP |
-| 25 | PUT | `/admin/exhibitions/{date}` | CURATOR | 제목·테마 저장(B-2-1) | MVP |
-| 26 | POST | `/admin/exhibitions/{date}/hide` | CURATOR | 전시 숨김 | MVP |
-| 27 | POST | `/admin/exhibitions/{date}/unhide` | CURATOR | 숨김 해제 | MVP |
-| 28 | POST | `/admin/exhibitions/{date}/carry-draft` | CURATOR | 드래프트 오늘로 이어쓰기 | MVP |
-| 29 | GET | `/admin/exhibitions/{date}/preview` | CURATOR | 관람자 화면과 동일 렌더용 | MVP |
-| 30 | PUT | `/admin/exhibitions/{date}/artworks/{position}` | CURATOR | 그림 메타 저장(B-2-2) | MVP |
-| 31 | DELETE | `/admin/exhibitions/{date}/artworks/{position}` | CURATOR | 슬롯 비우기 | MVP |
-| 32 | POST | `/admin/exhibitions/{date}/artworks/reorder` | CURATOR | 순서 변경 | MVP |
-| 33 | POST | `/admin/exhibitions/{date}/artworks/upload-urls` | CURATOR | presigned POST 자격 다중 발급 | MVP |
-| 34 | POST | `/admin/artworks/{id}/image/complete` | CURATOR | 업로드 완료 통지 + 동기 이미지 처리 | MVP |
-| 35 | GET | `/admin/members` | CURATOR | 회원 목록(B-3) | MVP |
-| 36 | POST | `/admin/members` | CURATOR | 대행 가입 | MVP |
-| 37 | POST | `/admin/members/{id}/block` | CURATOR | 차단 | MVP |
-| 38 | POST | `/admin/members/{id}/unblock` | CURATOR | 차단 해제 | MVP |
-| 39 | POST | `/admin/members/{id}/reset-password` | CURATOR | 비밀번호 초기화 | MVP |
-| 40 | GET | `/admin/settings` | CURATOR | 전역 설정 조회 | MVP |
-| 41 | PATCH | `/admin/settings` | CURATOR | 전역 설정 변경(가입 잠금 포함) | MVP |
-| 42 | GET | `/admin/notices` | CURATOR | 공지 목록 | MVP |
-| 43 | POST | `/admin/notices` | CURATOR | 공지 생성 | MVP |
-| 44 | PATCH | `/admin/notices/{id}` | CURATOR | 공지 수정 | MVP |
-| 45 | DELETE | `/admin/notices/{id}` | CURATOR | 공지 취소 | MVP |
-| 46 | GET | `/admin/stats/daily` | CURATOR | 날짜별 입장 현황(B-1) | v1.1 |
-| 47 | GET | `/admin/stats/members` | CURATOR | 회원 검색(B-1 입력) | v1.1 |
-| 48 | GET | `/admin/stats/members/{id}` | CURATOR | 회원별 감상 상세(B-1-1) | v1.1 |
-| 49 | GET | `/system/health` | PUBLIC | 헬스 체크 | MVP |
+| 10 | GET | `/auth/social/providers` | PUBLIC | 켜진 소셜 제공자 목록 | MVP |
+| 11 | GET | `/auth/social/{provider}/start` | PUBLIC | **302** 제공자 인가 화면으로 | MVP |
+| 12 | GET | `/auth/social/{provider}/callback` | PUBLIC | **302** 앱으로(세션 발급 또는 연결 화면) | MVP |
+| 13 | POST | `/auth/social/link` | PUBLIC | 기존 계정에 연결(비밀번호로 소유 증명) | MVP |
+| 14 | POST | `/auth/social/signup` | PUBLIC | 소셜 신규 가입(전화번호+이름) | MVP |
+| 15 | GET | `/exhibitions/current` | MEMBER | 현재 전시(C 화면) | MVP |
+| 16 | GET | `/exhibitions/{date}` | MEMBER | 특정 발행일 전시 | MVP |
+| 17 | GET | `/exhibitions` | MEMBER | 아카이브 목록(C-3) | MVP |
+| 18 | POST | `/exhibitions/{date}/view` | MEMBER | 입장 기록 | MVP |
+| 19 | GET | `/artworks/{id}` | MEMBER | 그림 상세(C-2) | MVP |
+| 20 | POST | `/artworks/{id}/view` | MEMBER | 그림 열람 기록 | MVP |
+| 21 | GET | `/me` | MEMBER | 내 정보 | MVP |
+| 22 | PATCH | `/me/settings` | MEMBER | 알림·글씨 설정 변경(C-4) | MVP |
+| 23 | DELETE | `/me` | MEMBER | 탈퇴 | MVP |
+| 24 | POST | `/me/push-subscriptions` | MEMBER | 푸시 구독 등록·갱신 | MVP |
+| 25 | GET | `/me/push-subscriptions` | MEMBER | 이 회원의 푸시 구독 목록 | MVP |
+| 26 | DELETE | `/me/push-subscriptions/{id}` | MEMBER | 푸시 구독 해제 | MVP |
+| 27 | GET | `/me/social-identities` | MEMBER | 연결된 소셜 계정 목록 | MVP |
+| 28 | DELETE | `/me/social-identities/{identity_id}` | MEMBER | 소셜 연결 해제 | MVP |
+| 29 | GET | `/admin/summary` | CURATOR | B 홈 요약 숫자 | MVP |
+| 30 | GET | `/admin/exhibitions/calendar` | CURATOR | 날짜별 발행 상태(B) | MVP |
+| 31 | GET | `/admin/exhibitions/{date}` | CURATOR | 전시 편집 상태 조회(B-2) | MVP |
+| 32 | PUT | `/admin/exhibitions/{date}` | CURATOR | 제목·테마 저장(B-2-1) | MVP |
+| 33 | POST | `/admin/exhibitions/{date}/hide` | CURATOR | 전시 숨김 | MVP |
+| 34 | POST | `/admin/exhibitions/{date}/unhide` | CURATOR | 숨김 해제 | MVP |
+| 35 | POST | `/admin/exhibitions/{date}/carry-draft` | CURATOR | 드래프트 오늘로 이어쓰기 | MVP |
+| 36 | GET | `/admin/exhibitions/{date}/preview` | CURATOR | 관람자 화면과 동일 렌더용 | MVP |
+| 37 | PUT | `/admin/exhibitions/{date}/artworks/{position}` | CURATOR | 그림 메타 저장(B-2-2) | MVP |
+| 38 | DELETE | `/admin/exhibitions/{date}/artworks/{position}` | CURATOR | 슬롯 비우기 | MVP |
+| 39 | POST | `/admin/exhibitions/{date}/artworks/reorder` | CURATOR | 순서 변경 | MVP |
+| 40 | POST | `/admin/exhibitions/{date}/artworks/upload-urls` | CURATOR | presigned POST 자격 다중 발급 | MVP |
+| 41 | POST | `/admin/artworks/{id}/image/complete` | CURATOR | 업로드 완료 통지 + 동기 이미지 처리 | MVP |
+| 42 | GET | `/admin/members` | CURATOR | 회원 목록(B-3) | MVP |
+| 43 | POST | `/admin/members` | CURATOR | 대행 가입 | MVP |
+| 44 | POST | `/admin/members/{id}/block` | CURATOR | 차단 | MVP |
+| 45 | POST | `/admin/members/{id}/unblock` | CURATOR | 차단 해제 | MVP |
+| 46 | POST | `/admin/members/{id}/reset-password` | CURATOR | 비밀번호 초기화 | MVP |
+| 47 | GET | `/admin/settings` | CURATOR | 전역 설정 조회 | MVP |
+| 48 | PATCH | `/admin/settings` | CURATOR | 전역 설정 변경(가입 잠금 포함) | MVP |
+| 49 | GET | `/admin/notices` | CURATOR | 공지 목록 | MVP |
+| 50 | POST | `/admin/notices` | CURATOR | 공지 생성 | MVP |
+| 51 | PATCH | `/admin/notices/{id}` | CURATOR | 공지 수정 | MVP |
+| 52 | DELETE | `/admin/notices/{id}` | CURATOR | 공지 취소 | MVP |
+| 53 | GET | `/admin/stats/daily` | CURATOR | 날짜별 입장 현황(B-1) | v1.1 |
+| 54 | GET | `/admin/stats/members` | CURATOR | 회원 검색(B-1 입력) | v1.1 |
+| 55 | GET | `/admin/stats/members/{id}` | CURATOR | 회원별 감상 상세(B-1-1) | v1.1 |
+| 56 | GET | `/system/health` | PUBLIC | 헬스 체크 | MVP |
 
 v1.1 표시 엔드포인트도 **경로와 스키마를 MVP 시점에 확정**한다. 프런트엔드가 나중에 붙일 때 계약 협의를 다시 하지 않기 위함이다.
 
@@ -448,10 +482,19 @@ v1.1 표시 엔드포인트도 **경로와 스키마를 MVP 시점에 확정**�
 | `PASSWORD_CURRENT_MISMATCH` | 401 | 현재 비밀번호가 맞지 않습니다. | false | — |
 | `RESET_CODE_INVALID` | 422 | 인증번호가 맞지 않습니다. | false | `attempts_left` |
 | `RESET_CODE_EXPIRED` | 422 | 인증번호가 만료되었습니다. 다시 받아 주세요. | false | — |
+| `SOCIAL_PROVIDER_UNKNOWN` | 404 | 지원하지 않는 로그인 방식입니다. | false | `provider` |
+| `SOCIAL_DISABLED` | 503 | 지금은 이 방식으로 로그인할 수 없습니다. | true | `provider` |
+| `SOCIAL_STATE_INVALID` | 400 | 로그인 요청이 만료되었습니다. 처음부터 다시 시도해 주세요. | false | — |
+| `SOCIAL_EXCHANGE_FAILED` | 502 | 로그인 제공자와 연결하지 못했습니다. 잠시 후 다시 시도해 주세요. | true | `provider` |
+| `SOCIAL_LINK_EXPIRED` | 400 | 연결 시간이 지났습니다. 처음부터 다시 시도해 주세요. | false | — |
+| `SOCIAL_ALREADY_LINKED` | 409 | 이미 다른 계정에 연결된 소셜 계정입니다. | false | — |
+| `SOCIAL_LAST_IDENTITY` | 409 | 마지막 로그인 수단은 해제할 수 없습니다. 비밀번호를 먼저 설정해 주세요. | false | — |
 
 > **클라이언트 전용 코드** — `NETWORK_OFFLINE`, `CLIENT_TIMEOUT`, `CHUNK_LOAD_FAILED`는 서버가 반환하지 않으며 프런트엔드 HTTP 클라이언트가 생성한다. 코드 이름 공간을 공유하되 서버 카탈로그에는 등록하지 않는다(프런트 문서 §7.1).
 
-**계정 존재 여부를 노출하지 않는다**(PRD §6.2). 미가입 번호 로그인, 차단 회원 로그인, 비밀번호 불일치는 **모두 `AUTH_INVALID_CREDENTIALS`**로 동일하게 응답한다. 비밀번호 재설정 요청도 미가입 번호에 성공 응답을 준다.
+**계정 존재 여부를 노출하지 않는다**(PRD §6.2). 미가입 번호 로그인, 차단 회원 로그인, 비밀번호 불일치는 **모두 `AUTH_INVALID_CREDENTIALS`**로 동일하게 응답한다. 비밀번호 재설정 요청도 미가입 번호에 성공 응답을 준다. §6.14 소셜 연결도 같은 규칙을 따른다.
+
+`SOCIAL_ALREADY_LINKED`는 **어느 회원에게 연결되어 있는지 알려주지 않는다.** 소셜 계정을 가진 사람이 우리 서비스의 회원 명단을 조회하는 수단이 되면 안 된다.
 
 ### 5.3 전시·그림
 
@@ -604,7 +647,59 @@ A 화면이 필요로 하는 모든 것을 한 번에 준다. 비로그인 상�
 
 **오류** — `RESET_CODE_INVALID`(422, `details.attempts_left`), `RESET_CODE_EXPIRED`(422), `PASSWORD_POLICY_VIOLATION`(422)
 
-### 6.10 미디어 접근 규약
+### 6.11 `GET /auth/social/providers` — 켜진 제공자 목록
+
+**응답 `data`** — `{ providers: [{ provider, label, start_url }] }`
+
+`client_id`가 설정된 제공자만 담긴다. **화면이 환경변수를 알 필요가 없다** — 목록이 비어 있으면 A-1에 소셜 영역 자체를 그리지 않는다.
+
+### 6.12 `GET /auth/social/{provider}/start` — 인가 요청 시작
+
+**응답** — `302` + `Location: {제공자 인가 URL}`. **봉투를 쓰지 않는다**(§2.2의 두 번째 예외).
+
+**쿼리** — `next`(선택). 로그인 후 돌아갈 앱 내부 경로. `/`로 시작하고 `//`·`\`로 시작하지 않는 값만 허용하며, 그 외는 `/gallery`로 떨어뜨린다(열린 리다이렉트 방어).
+
+서버가 `state`·`code_verifier`(PKCE S256)·`nonce`를 만들어 **서명 쿠키 `gk_oauth`**(HttpOnly, `SameSite=Lax`, TTL 10분)에 담고, 인가 URL에는 `state`와 `code_challenge`만 싣는다.
+
+### 6.13 `GET /auth/social/{provider}/callback` — 인가 코드 수신
+
+**응답** — `302`. 성공이면 `Location: {next}` + 세션 쿠키, 미연결이면 `Location: /auth/link` + 연결 티켓 쿠키.
+
+| 단계 | 실패 시 |
+|---|---|
+| `state` 대조(URL ↔ 쿠키) | `302 /login?social_error=SOCIAL_STATE_INVALID` |
+| 코드 → 토큰 교환(`code_verifier` 동봉) | `302 /login?social_error=SOCIAL_EXCHANGE_FAILED` |
+| `id_token` 서명·`iss`·`aud`·`exp`·`nonce` 검증 | 동상 |
+| 제공자 프로필 조회 | 동상 |
+| 사용자가 동의 화면에서 취소 | `302 /login` (오류 없이 조용히) |
+
+**모든 실패가 302로 끝나는 이유** — 이 경로는 브라우저 주소창이 향하는 곳이다. JSON 오류 봉투를 내리면 사용자는 흰 화면의 영어 덩어리를 본다. 화면이 `social_error` 코드를 §5.2의 한국어 문구로 번역해 로그인 화면 상단 배너에 띄운다.
+
+### 6.14 `POST /auth/social/link` — 기존 계정에 연결
+
+**전제** — 연결 티켓 쿠키(`gk_oauth_link`). 없거나 만료면 `SOCIAL_LINK_EXPIRED`.
+
+**요청 바디** — `phone`(필수), `password`(필수)
+
+**응답 `data`** — `{ user }` + 세션 쿠키. 이후 그 소셜로 바로 로그인된다.
+
+**비밀번호를 요구하는 이유** — 전화번호만으로 연결하면 남의 번호를 적어 계정을 가져갈 수 있다. 연결은 **소유 증명**을 거쳐야 한다.
+
+**오류** — `AUTH_INVALID_CREDENTIALS`(401 — 미가입·비밀번호 불일치·차단을 구분하지 않는다), `AUTH_TOO_MANY_ATTEMPTS`(429), `SOCIAL_ALREADY_LINKED`(409), `SOCIAL_LINK_EXPIRED`(400)
+
+### 6.15 `POST /auth/social/signup` — 소셜 신규 가입
+
+**전제** — 연결 티켓 쿠키.
+
+**요청 바디** — `phone`(필수), `name`(필수, 1–20자), `agreed_terms`(필수, `true`)
+
+**응답 `data`** — `{ user, is_first_login: true }` + 세션 쿠키
+
+생성되는 계정은 `password_hash = NULL`, `created_via = 'social'`이다. **`signup_open`이 꺼져 있으면 만들지 않는다** — 가입 잠금은 외부 유입을 막는 장치이고, 소셜이 그 잠금의 뒷문이 되면 폐쇄형 서비스라는 전제가 깨진다.
+
+**오류** — `SIGNUP_CLOSED`(403), `SIGNUP_PHONE_TAKEN`(409 — 이 번호는 §6.14로 연결해야 한다), `SOCIAL_ALREADY_LINKED`(409), `SOCIAL_LINK_EXPIRED`(400)
+
+### 6.16 미디어 접근 규약
 
 이미지 버킷은 비공개이며 **접근 수단은 presigned URL 하나뿐이다.** 전용 엔드포인트는 두지 않는다.
 
@@ -769,6 +864,18 @@ DB 문서 §10.1의 트랜잭션을 수행한다. **큐레이터 계정은 탈�
 **권한** `MEMBER` · **응답 `data`** `{}`
 
 해당 단말 구독만 해제한다. `notify_enabled`는 건드리지 않는다 — 다른 단말에서는 계속 받을 수 있어야 한다. 전면 해제는 `PATCH /me/settings`의 `notify_enabled=false`다.
+
+### 8.7 `GET /me/social-identities` — 연결된 소셜 계정
+
+**권한** `MEMBER` · **응답 `data`** — `{ identities: SocialIdentity[], can_unlink: boolean }`
+
+`can_unlink`가 `false`면 화면이 해제 버튼을 비활성화한다. 비밀번호가 없고 연결이 하나뿐인 상태이며, 해제하면 로그인 수단이 0이 된다.
+
+### 8.8 `DELETE /me/social-identities/{identity_id}` — 연결 해제
+
+**권한** `MEMBER` · **응답 `data`** `{}`
+
+**오류** — `NOT_FOUND`(404 — 남의 연결 id를 넣어 존재를 떠보는 것도 부재로 답한다), `SOCIAL_LAST_IDENTITY`(409)
 
 ---
 

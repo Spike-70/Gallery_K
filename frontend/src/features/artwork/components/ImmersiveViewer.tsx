@@ -65,7 +65,7 @@ export function ImmersiveViewer({ artwork, onClose }: ImmersiveViewerProps) {
    * 사용자는 아무 표시 없이 기다리게 된다. 뒤에서 받아 두었다가 **로드된 뒤에** 바꾸고,
    * 받는 동안에는 우상단에 작은 스피너를 띄운다(UX §3.8 상태표).
    */
-  const originUrl = artwork.image.originUrl
+  const originUrl = artwork.image?.originUrl ?? null
   const [originReady, setOriginReady] = useState(false)
   const [originLoading, setOriginLoading] = useState(false)
 
@@ -81,6 +81,11 @@ export function ImmersiveViewer({ artwork, onClose }: ImmersiveViewerProps) {
     }
     image.onerror = settle
   }, [isZoomed, originUrl, originReady, originLoading])
+
+  // 아직 올라오지 않은 자리는 확대할 것이 없다(API 문서 §9.12). 훅을 모두 부른 뒤에
+  // 빠져나가야 호출 순서가 흔들리지 않는다. 호출부도 버튼을 그리지 않지만, 이 컴포넌트가
+  // 스스로 안전한 편이 낫다 — 다음에 다른 곳에서 열어도 깨지지 않는다.
+  if (!artwork.image) return null
 
   const source = originReady && originUrl ? originUrl : artwork.image.displayUrl
 

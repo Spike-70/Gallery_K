@@ -105,9 +105,21 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    // 백엔드 연동 시: 동일 오리진 규약(API 문서 §2.11)을 로컬에서도 재현한다.
-    // proxy: {
-    //   '/api': { target: 'http://localhost:8000', changeOrigin: true },
-    // },
+    /**
+     * 동일 오리진 규약(API 문서 §2.11)을 로컬에서도 재현한다.
+     *
+     * 프런트는 5173, `chalice local`은 8000에서 뜨지만 브라우저에는 한 오리진으로 보인다.
+     * 그래야 세션 쿠키(`SameSite=Lax`)와 CSRF 헤더가 **배포와 같은 조건에서** 검증된다.
+     *
+     * 접두를 떼는 이유 — `/api`는 CloudFront가 붙이는 배포 경로이고, `chalice local`의
+     * 라우트에는 그 접두가 없다(백엔드 README).
+     */
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+    },
   },
 })

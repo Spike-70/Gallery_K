@@ -1,44 +1,28 @@
+import { endpoints } from '@/shared/api/endpoints'
+import { httpClient } from '@/shared/api/httpClient'
 import type { RawSession, RawSessionUser } from '@/shared/api/types'
-// [API] 백엔드 연동 시 아래 두 줄의 주석을 해제한다.
-// import { endpoints } from '@/shared/api/endpoints'
-// import { httpClient } from '@/shared/api/httpClient'
 
 import { toSession, toSessionUser } from '@/entities/session/api/mappers'
 import type { Session, SessionUser } from '@/entities/session/model/types'
 
-// [MOCK] 데모 전용 — `src/mocks/README.md`의 3단계로 제거한다.
-import * as authMock from '@/mocks/handlers/authHandlers'
-import * as meMock from '@/mocks/handlers/meHandlers'
-
 /**
  * 세션·계정 API — API 명세서 §6·§8
  *
- * 각 함수는 **실제 호출(`[API]`)과 데모 목(`[MOCK]`)이 나란히** 있으며 반환 타입이 같다.
- * 교체는 주석을 옮기는 것으로 끝난다. `grep -rn "\[MOCK\]" src/`로 전수를 찾을 수 있다.
+ * 세션 토큰은 HttpOnly 쿠키로만 오간다. 이 모듈은 토큰을 보지도 저장하지도 않는다(§12).
  */
 
-/** `GET /auth/session` — 앱 부팅 시 1회 */
+/** `GET /auth/session` — 앱 부팅 시 1회. 비로그인이어도 200이다. */
 export async function fetchSession(): Promise<Session> {
-  // [API]
-  // const raw = await httpClient.get<RawSession>(endpoints.auth.session())
-  // return toSession(raw)
-
-  // [MOCK]
-  const raw: RawSession = await authMock.getSession()
+  const raw = await httpClient.get<RawSession>(endpoints.auth.session())
   return toSession(raw)
 }
 
 /** `POST /auth/login` */
 export async function login(input: { phone: string; password: string }): Promise<SessionUser> {
-  // [API]
-  // const raw = await httpClient.post<{ user: RawSessionUser }>(endpoints.auth.login(), {
-  //   phone: input.phone,
-  //   password: input.password,
-  // })
-  // return toSessionUser(raw.user)
-
-  // [MOCK]
-  const raw = await authMock.login(input)
+  const raw = await httpClient.post<{ user: RawSessionUser }>(endpoints.auth.login(), {
+    phone: input.phone,
+    password: input.password,
+  })
   return toSessionUser(raw.user)
 }
 
@@ -49,25 +33,21 @@ export async function signup(input: {
   name: string
   agreedTerms: boolean
 }): Promise<SessionUser> {
-  // [API]
-  // const raw = await httpClient.post<{ user: RawSessionUser; is_first_login: boolean }>(
-  //   endpoints.auth.signup(),
-  //   { phone: input.phone, password: input.password, name: input.name, agreed_terms: input.agreedTerms },
-  // )
-  // return toSessionUser(raw.user)
-
-  // [MOCK]
-  const raw = await authMock.signup(input)
+  const raw = await httpClient.post<{ user: RawSessionUser; is_first_login: boolean }>(
+    endpoints.auth.signup(),
+    {
+      phone: input.phone,
+      password: input.password,
+      name: input.name,
+      agreed_terms: input.agreedTerms,
+    },
+  )
   return toSessionUser(raw.user)
 }
 
 /** `POST /auth/logout` */
 export async function logout(): Promise<void> {
-  // [API]
-  // await httpClient.post(endpoints.auth.logout())
-
-  // [MOCK]
-  await authMock.logout()
+  await httpClient.post(endpoints.auth.logout())
 }
 
 /** `POST /auth/password` — 다른 단말 세션은 모두 만료된다 */
@@ -75,15 +55,10 @@ export async function changePassword(input: {
   currentPassword: string
   newPassword: string
 }): Promise<SessionUser> {
-  // [API]
-  // const raw = await httpClient.post<{ user: RawSessionUser }>(endpoints.auth.password(), {
-  //   current_password: input.currentPassword,
-  //   new_password: input.newPassword,
-  // })
-  // return toSessionUser(raw.user)
-
-  // [MOCK]
-  const raw = await authMock.changePassword(input)
+  const raw = await httpClient.post<{ user: RawSessionUser }>(endpoints.auth.password(), {
+    current_password: input.currentPassword,
+    new_password: input.newPassword,
+  })
   return toSessionUser(raw.user)
 }
 
@@ -92,16 +67,10 @@ export async function requestPasswordReset(input: { phone: string }): Promise<{
   expiresInSeconds: number
   resendAfterSeconds: number
 }> {
-  // [API]
-  // const raw = await httpClient.post<{ expires_in_seconds: number; resend_after_seconds: number }>(
-  //   endpoints.auth.passwordResetRequest(),
-  //   { phone: input.phone },
-  // )
-  // return { expiresInSeconds: raw.expires_in_seconds, resendAfterSeconds: raw.resend_after_seconds }
-
-  // [MOCK]
-  void input
-  const raw = await authMock.requestPasswordReset()
+  const raw = await httpClient.post<{ expires_in_seconds: number; resend_after_seconds: number }>(
+    endpoints.auth.passwordResetRequest(),
+    { phone: input.phone },
+  )
   return { expiresInSeconds: raw.expires_in_seconds, resendAfterSeconds: raw.resend_after_seconds }
 }
 
@@ -111,27 +80,15 @@ export async function confirmPasswordReset(input: {
   code: string
   newPassword: string
 }): Promise<void> {
-  // [API]
-  // await httpClient.post(endpoints.auth.passwordResetConfirm(), {
-  //   phone: input.phone,
-  //   code: input.code,
-  //   new_password: input.newPassword,
-  // })
-
-  // [MOCK]
-  await authMock.confirmPasswordReset(input)
+  await httpClient.post(endpoints.auth.passwordResetConfirm(), {
+    phone: input.phone,
+    code: input.code,
+    new_password: input.newPassword,
+  })
 }
 
 /** `GET /me` */
 export async function fetchMe(): Promise<SessionUser> {
-  // [API]
-  // const raw = await httpClient.get<{ user: RawSessionUser }>(endpoints.me.root())
-  // return toSessionUser(raw.user)
-
-  // [MOCK]
-  const raw = await meMock.getMe()
+  const raw = await httpClient.get<{ user: RawSessionUser }>(endpoints.me.root())
   return toSessionUser(raw.user)
 }
-
-// 실제 호출로 교체할 때 타입이 즉시 맞도록 원형 타입을 여기서 참조해 둔다.
-export type { RawSession, RawSessionUser }

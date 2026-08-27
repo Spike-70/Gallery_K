@@ -44,6 +44,7 @@
 app_user ─┬─< view_log >─ exhibition
           ├─< artwork_view_log >─ artwork ─< exhibition
           ├─< push_subscription
+          ├─< social_identity
           ├─< notification_log
           ├─< audit_log
           ├─< exhibition (created_by)
@@ -62,6 +63,7 @@ app_setting · auth_throttle — 독립 테이블
 | `artwork_view_log.artwork_id` → `artwork` | `CASCADE` | 그림 교체 시 그 열람 기록은 의미를 잃는다 |
 | `artwork_view_log.exhibition_id` → `exhibition` | `CASCADE` | 집계 기준 비정규화 컬럼 |
 | `push_subscription.user_id` → `app_user` | `CASCADE` | 개인정보성 자원, 즉시 파기 |
+| `social_identity.user_id` → `app_user` | `CASCADE` | 회원이 사라지면 외부 계정 연결도 의미가 없다 |
 | `view_log.user_id` → `app_user` | `SET NULL` | 집계 형태는 남기고 식별만 끊는다 |
 | `view_log.exhibition_id` → `exhibition` | `SET NULL` | 방어적 |
 | `artwork_view_log.user_id` → `app_user` | `SET NULL` | 동상 |
@@ -80,12 +82,13 @@ app_setting · auth_throttle — 독립 테이블
 ### 4.1 `app_user` — 회원
 관람자·큐레이터를 `role`로 구분하는 단일 테이블. 큐레이터는 시드로 1건만 생성한다.
 
-- 신원·인증: `phone`(로그인 ID, 하이픈 없는 숫자), `password_hash`(bcrypt), `name`, `role`, `token_version`(JWT 무효화 카운터), `must_change_password`, `last_login_at`
+- 신원·인증: `phone`(로그인 ID, 하이픈 없는 숫자), `password_hash`(bcrypt, **NULL 허용** — 소셜로만 가입한 회원은 비밀번호가 없다), `name`, `role`, `token_version`(JWT 무효화 카운터), `must_change_password`, `last_login_at`
 - 설정: `notify_enabled`, `notify_at`(끄더라도 값 보존), `font_scale`
 - 운영: `is_blocked`, `blocked_at`, `blocked_reason`, `created_via`
 - 제약: `uq_app_user_phone` · `uq_app_user_single_curator`(`role='curator'` 부분 유니크) · `role`/`font_scale`/`created_via`/`phone` 형식 CHECK
 - 인덱스: 알림 대상 조회용 부분 인덱스, 가입일 정렬, 이름 부분 검색(`pg_trgm`)
 - 규칙: 차단은 기존 세션을 끊지 않는다(로그인 시점에만 작동)
+- 규칙: **`phone`은 소셜 가입에서도 필수다.** 아침 알림 타겟팅·대행 가입·차단·회원 관리가 전부 전화번호에 걸려 있어, 전화번호 없는 회원은 운영 화면에서 다룰 수 없다(소셜 문서 SA-2)
 
 ### 4.2 `auth_throttle` — 인증 시도 제한
 Lambda는 인스턴스 메모리를 신뢰할 수 없으므로 시도 상태를 DB에 둔다.
@@ -99,7 +102,16 @@ Lambda는 인스턴스 메모리를 신뢰할 수 없으므로 시도 상태를 
 - `user_id`, `endpoint`, `endpoint_hash`(UNIQUE — 엔드포인트가 인덱스 상한을 넘길 수 있다), `p256dh`, `auth`, `platform`, `is_active`, `failure_count`
 - 규칙: 같은 엔드포인트가 다른 회원으로 재등록되면 소유자를 갱신. 푸시 404/410이면 즉시 비활성, 5xx는 연속 실패 누적 후 비활성
 
-### 4.4 `exhibition` — 전시(하루 단위)
+### 4.4 `social_identity` — 외부 계정 연결
+한 회원이 여러 제공자를 연결할 수 있어 1:N. **소셜은 로그인 수단이지 신원이 아니다**(소셜 문서 SA-2).
+
+- `user_id`, `provider`, `provider_uid`, `email`(선택 동의라 비어 올 수 있다), `display_name`, `linked_at`, `last_login_at`
+- 제약: `uq_social_identity_provider_uid`(`provider`, `provider_uid` 복합 UNIQUE) · `provider` 값 CHECK
+- 인덱스: `user_id`(연결 목록 조회)
+- 규칙: **이메일로 계정을 병합하지 않는다.** 제공자가 이메일 소유를 검증하지 않으면 계정 탈취 경로가 된다. 신원은 `(provider, provider_uid)` 하나뿐이다
+- 규칙: 비밀번호가 없는 회원의 **마지막 연결은 해제할 수 없다** — 해제하면 로그인 수단이 0이 되어 영구 잠금이다
+
+### 4.5 `exhibition` — 전시(하루 단위)
 **드래프트와 발행본이 같은 행이다.** 별도 draft 테이블을 두지 않는다.
 
 - 식별: `exhibition_date`(발행일, UNIQUE — 하루 하나)
@@ -110,7 +122,7 @@ Lambda는 인스턴스 메모리를 신뢰할 수 없으므로 시도 상태를 
 - 인덱스: 관람자 질의 전용 부분 인덱스(`is_published AND NOT is_hidden`, 날짜 역순) — 모든 관람 트래픽이 이 하나를 탄다
 - 발행 조건: 제목·테마·완성 그림 12점. **서비스 계층에서만 판정하며 DB 트리거를 쓰지 않는다**(발행은 알림을 유발하는 도메인 이벤트다)
 
-### 4.5 `artwork` — 그림
+### 4.6 `artwork` — 그림
 - 소속·순서: `exhibition_id`, `position`(1–12, `(exhibition_id, position)` UNIQUE, 범위 CHECK)
 - 본문: `title`, `artist`, `year_text`, `description`, `collection`, `source_url`(https CHECK)
 - 이미지: `image_status`, 키 3종(원본·디스플레이·썸네일), `image_lqip`, `image_width/height`, `image_bytes`, `image_mime`, `image_error_code`, `image_uploaded_at`, `image_ready_at`
@@ -118,7 +130,7 @@ Lambda는 인스턴스 메모리를 신뢰할 수 없으므로 시도 상태를 
 - 제약: `ready`면 이미지 키가 존재해야 한다
 - 순서 변경: 슬롯 유니크를 `DEFERRABLE`로 선언하고 트랜잭션 안에서 일괄 재할당한다. 임시 오프셋 트릭을 쓰지 않는다
 
-### 4.6 `view_log` — 갤러리 입장 기록
+### 4.7 `view_log` — 갤러리 입장 기록
 **관람일 기준 하루 1행**이 전부다.
 
 - `user_id`, `viewed_on`(관람일 KST), `exhibition_id`(그날 실제로 걸린 전시), `first_entered_at`, `last_entered_at`, `entry_count`(진단용, 지표 미사용), `is_anonymized`
@@ -126,32 +138,32 @@ Lambda는 인스턴스 메모리를 신뢰할 수 없으므로 시도 상태를 
 - 규칙: 진입 시 UPSERT. 충돌 시 `exhibition_id`는 갱신하지 않는다(그날 처음 연 전시가 대표값). 아카이브 진입도 같은 입장으로 센다
 - 두지 않는 컬럼: 오늘/아카이브 구분, `session_id`, `ip`, `user_agent` (DP-5)
 
-### 4.7 `artwork_view_log` — 그림 열람 기록
+### 4.8 `artwork_view_log` — 그림 열람 기록
 **(회원, 그림) 조합당 1행.** 중복 제거 집계를 제약으로 표현한다.
 
 - `user_id`, `artwork_id`, `exhibition_id`(비정규화), `first_viewed_on`, `first_viewed_at`, `last_viewed_at`, `view_count`, `is_anonymized`
 - 제약: `(user_id, artwork_id)` UNIQUE
 - 활용: 갤러리 그리드의 "열어봄" 표식은 **전시 기준**으로 조회한다
 
-### 4.8 `notice` — 휴관 공지
+### 4.9 `notice` — 휴관 공지
 - `starts_on`, `ends_on`, `body`, `is_active`, `created_by`
 - 제약: 기간 순서 CHECK, **활성 공지 기간 중첩 금지 EXCLUDE**(`btree_gist`). 겹침을 허용하면 "오늘의 공지"가 비결정적이 된다
 - 활용: 공지 기간은 발행 빈도 지표의 분모와 큐레이터 연장 알림에서 제외된다
 
-### 4.9 `app_setting` — 전역 설정
+### 4.10 `app_setting` — 전역 설정
 키-값 단일 테이블. 설정마다 컬럼을 늘리지 않는다.
 
 - `key`(PK), `value`(jsonb), `value_type`, `description`, `is_mutable`, `updated_by`
 - 시드 키: `signup_open` · `notify_default_time` · `notify_cutoff_hour` · `carryover_alert_days` · `archive_size` · `admin_calendar_days` · `log_retention_days` · `media_url_ttl_seconds` · `maintenance_mode` · `session_ttl_days`
 - **배포로만 바뀌는 값은 환경변수, 운영 중 조정되는 값은 이 테이블**이다. 이 구분을 흐리지 않는다
 
-### 4.10 `notification_log` — 알림 발송 이력
+### 4.11 `notification_log` — 알림 발송 이력
 중복 발송 방지와 사후 추적을 함께 담당한다.
 
 - `user_id`, `kind`, `dedupe_key`(UNIQUE), `exhibition_id`, `status`, `skip_reason`, `scheduled_for`, `sent_at`, `attempt_count`, `last_error`, `payload`(발송 시점 스냅샷)
 - 규칙: `dedupe_key` UNIQUE가 "하루 1회"와 "연장 기간당 1회"를 DB 수준에서 보장한다. **발송하지 않기로 한 경우에도 `skipped` 행을 남긴다** — 보내지 않은 이유가 남아야 문의에 답할 수 있다
 
-### 4.11 `audit_log` — 관리자 조작 이력
+### 4.12 `audit_log` — 관리자 조작 이력
 - `actor_id`, `actor_role`(시점 스냅샷), `action`, `target_type`, `target_id`, `summary`, `changes`(before/after), `request_id`
 - 규칙: 비밀번호 해시·전화번호 전체를 담지 않는다
 
@@ -165,13 +177,14 @@ Lambda는 인스턴스 메모리를 신뢰할 수 없으므로 시도 상태를 
 |---|---|
 | `UserRole` | `viewer`, `curator` |
 | `FontScale` | `normal`, `large` |
-| `CreatedVia` | `self`, `curator` |
+| `CreatedVia` | `self`, `curator`, `social` |
 | `ImageStatus` | `empty`, `uploading`, `ready`, `failed` |
 | `ExhibitionDayStatus` | `published`, `carried_over`, `empty` (컬럼 아님 — 달력 응답의 파생값) |
 | `NotificationKind` | `morning_exhibition`, `late_publish`, `curator_carryover`, `curator_signup` |
 | `NotificationStatus` | `pending`, `sent`, `skipped`, `failed` |
-| `ThrottleScope` | `login`, `signup`, `password_reset` |
+| `ThrottleScope` | `login`, `signup`, `password_reset`, `upload_url` |
 | `PushPlatform` | `ios`, `android`, `desktop`, `unknown` |
+| `SocialProvider` | `kakao`, `google` |
 
 ---
 
@@ -257,7 +270,7 @@ MVP에서 **만들지 않되** 나중의 스키마 변경이 국소적이 되도
 | 기능 | 변경 범위 |
 |---|---|
 | SMS 비밀번호 재설정 | 신규 테이블 1개. 기존 무영향 |
-| 소셜 로그인 | 신규 연결 테이블 1개. `app_user` 무변경 |
+| 소셜 제공자 추가(네이버·애플 등) | 스키마 무변경. `SocialProvider` CHECK에 값 추가 + 서술자 1개 |
 | 예약 발행(시각 지정) | `exhibition`에 시각 컬럼 추가 + 관람자 질의 조건·인덱스 확장 |
 | 통계 롤업 테이블 | 회원 100명 규모에서는 불필요. 실시간 집계로 충분하며 규모가 커지면 도입 |
 | 즉시 차단(세션 무효화) | 스키마 변경 없음. `token_version` 증가로 구현 |

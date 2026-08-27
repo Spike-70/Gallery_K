@@ -11,7 +11,7 @@ from chalicelib.core.ids import parse_uuid
 from chalicelib.core.security import build_expired_session_cookie
 from chalicelib.core.timeutil import parse_time_of_day
 from chalicelib.schemas.me import PushSubscriptionIn, SettingsPatchIn, WithdrawIn
-from chalicelib.services import member_service, push_service
+from chalicelib.services import member_service, push_service, social_auth_service
 
 from ._base import blueprint, route
 
@@ -122,3 +122,35 @@ def _owns_push_subscription(
 
 
 OWNERSHIP: dict[str, object] = {PUSH_SUBSCRIPTION: _owns_push_subscription}
+
+
+# ── 연결된 소셜 계정 (API 문서 §8.7·§8.8) ──────────────────────────────────
+
+
+@route(bp, "/me/social-identities")
+@require(MEMBER)
+def list_social_identities() -> Result:
+    """D 설정 화면의 `연결된 로그인` 섹션. **제공자 토큰은 나가지 않는다**(SA-3)."""
+    context = ctx_module.current()
+    assert context.actor_id is not None
+    return Result(
+        data=social_auth_service.list_identities(context.db, context.actor_id),
+        cache_control=CACHE_NO_STORE,
+    )
+
+
+@route(bp, "/me/social-identities/{identity_id}", methods=("DELETE",))
+@require(MEMBER)
+def delete_social_identity(identity_id: str) -> Result:
+    """마지막 로그인 수단은 해제할 수 없다(SA-6) — 해제하면 들어올 길이 없어진다.
+
+    소유 검사는 서비스가 `user_id`와 함께 조회하는 것으로 끝난다. 남의 연결 id를
+    넣어도 **부재**로 답하므로 존재를 떠볼 수 없다.
+    """
+    context = ctx_module.current()
+    assert context.actor_id is not None
+    parsed = parse_uuid(identity_id)
+    if parsed is None:
+        raise AppError(ErrorCode.NOT_FOUND, details={"resource": "social_identity"})
+    social_auth_service.unlink(context.db, context.actor_id, parsed)
+    return Result(data={}, cache_control=CACHE_NO_STORE)

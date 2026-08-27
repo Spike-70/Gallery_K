@@ -72,8 +72,6 @@ export function useUploadQueue(date: IsoDate, slots: AdminSlot[] | undefined) {
             filename: file.name,
             contentType: file.type,
             sizeBytes: file.size,
-            // [MOCK] 데모에서 실제 파일을 화면에 그대로 보여주기 위한 값이다.
-            objectUrl: URL.createObjectURL(file),
           })),
         )
 
@@ -124,7 +122,6 @@ export function useUploadQueue(date: IsoDate, slots: AdminSlot[] | undefined) {
  * S3는 `file` 이후의 필드를 무시한다.
  *
  * 진행률이 필요하므로 `XMLHttpRequest`를 쓴다 — `fetch`는 업로드 진행률을 노출하지 않는다.
- * 데모에서는 `mock://` 스킴이라 실제 전송 없이 진행률만 흉내 낸다.
  */
 function postToStorage(
   url: string,
@@ -132,21 +129,6 @@ function postToStorage(
   file: File,
   onProgress: (value: number) => void,
 ): Promise<void> {
-  // [MOCK] 실제 배포에서는 이 분기가 존재하지 않는다.
-  if (url.startsWith('mock://')) {
-    return new Promise((resolve) => {
-      let value = 0
-      const timer = window.setInterval(() => {
-        value = Math.min(100, value + 20)
-        onProgress(value)
-        if (value >= 100) {
-          window.clearInterval(timer)
-          resolve()
-        }
-      }, 120)
-    })
-  }
-
   const form = new FormData()
   for (const [key, value] of Object.entries(fields)) form.append(key, value)
   form.append('file', file)

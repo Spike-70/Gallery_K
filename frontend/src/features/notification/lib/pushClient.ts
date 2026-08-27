@@ -12,7 +12,11 @@ import type { PushPlatform } from '@/shared/types/enums'
  */
 
 export type PushSubscriptionInfo = {
+  /** 푸시 서비스 endpoint 원문. 서버 등록에만 쓰고 화면에 노출하지 않는다. */
+  endpoint: string
+  /** 서버 목록과 대조하는 열쇠. 서버는 endpoint 원문을 되돌려주지 않는다(API 문서 §8.5). */
   endpointHash: string
+  keys: { p256dh: string; auth: string }
   platform: PushPlatform
 }
 
@@ -29,7 +33,7 @@ export async function requestPermission(): Promise<PermissionResult> {
   return result === 'granted' ? 'granted' : 'denied'
 }
 
-/** endpoint 원문은 서버에 왕복시키지 않는다. SHA-256 해시로만 대조한다(API 문서 §8.5). */
+/** endpoint 원문은 대조에 쓰지 않는다. SHA-256 해시로만 맞춰 본다(API 문서 §8.5). */
 async function hashEndpoint(endpoint: string): Promise<string> {
   const buffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(endpoint))
   return Array.from(new Uint8Array(buffer))
@@ -46,19 +50,27 @@ function urlBase64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
   return bytes
 }
 
+/** `ArrayBuffer` 키를 서버가 받는 base64url 문자열로 만든다. */
+function toBase64Url(buffer: ArrayBuffer | null): string | null {
+  if (!buffer) return null
+  let binary = ''
+  for (const byte of new Uint8Array(buffer)) binary += String.fromCharCode(byte)
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+
 /**
  * 브라우저 구독을 만든다.
- * 서비스워커나 VAPID 키가 없는 환경(데모·개발)에서는 합성 endpoint를 돌려주어
- * 화면 흐름을 끝까지 확인할 수 있게 한다.
+ *
+ * VAPID 공개키가 없거나 브라우저가 푸시를 지원하지 않으면 **구독하지 않는다.**
+ * 서버에 등록할 수 없는 구독을 만들어 봐야 알림이 오지 않으므로, 없는 것이 정직하다.
  */
 export async function subscribe(): Promise<PushSubscriptionInfo | null> {
-  const platform = detectPushPlatform()
-
   if (!supportsPush() || !env.vapidPublicKey) {
-    // [MOCK] 실제 배포에서는 VAPID 키가 반드시 존재한다. 없으면 알림 기능을 비활성화한다.
-    logger.warn('push unavailable — synthetic subscription for demo')
-    return { endpointHash: await hashEndpoint(`demo:${platform}:${navigator.userAgent}`), platform }
+    logger.warn('push unavailable — VAPID key missing or unsupported browser')
+    return null
   }
+
+  const platform = detectPushPlatform()
 
   try {
     const registration = await navigator.serviceWorker.ready
@@ -69,7 +81,20 @@ export async function subscribe(): Promise<PushSubscriptionInfo | null> {
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(env.vapidPublicKey),
       }))
-    return { endpointHash: await hashEndpoint(subscription.endpoint), platform }
+
+    const p256dh = toBase64Url(subscription.getKey('p256dh'))
+    const auth = toBase64Url(subscription.getKey('auth'))
+    if (!p256dh || !auth) {
+      logger.warn('push subscription has no encryption keys')
+      return null
+    }
+
+    return {
+      endpoint: subscription.endpoint,
+      endpointHash: await hashEndpoint(subscription.endpoint),
+      keys: { p256dh, auth },
+      platform,
+    }
   } catch (error) {
     logger.warn('push subscribe failed', error)
     return null

@@ -14,14 +14,10 @@ type Env = {
   /** 웹푸시 구독용 VAPID 공개키. 없으면 알림 기능이 비활성화된다. */
   vapidPublicKey: string | null
   /**
-   * 데모 모드 스위치.
-   *
-   * ─── 데모 제거 절차 ───────────────────────────────────────────────
-   * `.env`에 `VITE_USE_MOCK=false`를 두면 목 데이터 경로가 전부 차단된다.
-   * 완전 제거는 `src/mocks/README.md`의 3단계를 따른다.
-   * ────────────────────────────────────────────────────────────────
+   * A 첫 화면의 정문 이미지. 서명이 필요 없는 **유일한** 이미지 경로다(PRD §8.4).
+   * 작품 이미지는 여기에 오지 않는다.
    */
-  useMock: boolean
+  entranceImageUrl: string
 }
 
 function required(key: string, value: string | undefined): string {
@@ -35,19 +31,13 @@ function optional(value: string | undefined): string | null {
   return value && value.length > 0 ? value : null
 }
 
-function toBoolean(value: string | undefined, fallback: boolean): boolean {
-  if (value === undefined) return fallback
-  return value === 'true' || value === '1'
-}
-
 const rawAppEnv = (import.meta.env.VITE_APP_ENV ?? 'dev') as AppEnv
 
 export const env: Env = {
   apiBaseUrl: required('VITE_API_BASE_URL', import.meta.env.VITE_API_BASE_URL ?? '/api'),
   appEnv: rawAppEnv,
   vapidPublicKey: optional(import.meta.env.VITE_VAPID_PUBLIC_KEY),
-  // 데모 단계의 기본값은 true다. 백엔드 연동 시 false로 바꾼다.
-  useMock: toBoolean(import.meta.env.VITE_USE_MOCK, true),
+  entranceImageUrl: import.meta.env.VITE_ENTRANCE_IMAGE_URL ?? '/media/public/entrance.jpg',
 }
 
 export const isProduction = env.appEnv === 'prod'

@@ -18,18 +18,23 @@
 
 ```bash
 npm install
-cp .env.example .env   # 선택. 없어도 기본값으로 동작한다
 npm run dev            # http://localhost:5173
 ```
 
-백엔드 없이 **전 화면이 동작한다**. 로그인은 아래 데모 계정을 쓴다(로그인 화면에도 안내가 있다).
+**백엔드가 함께 떠 있어야 한다.** `backend/README.md`의 `make serve`로 8000 포트에 띄우면
+dev 서버가 `/api`를 그쪽으로 프록시한다(`vite.config.ts`). 접두 `/api`는 배포에서
+CloudFront가 붙이는 경로이고 `chalice local`에는 없으므로 프록시가 떼어 준다. 이렇게
+**동일 오리진 조건을 로컬에서 재현**해야 세션 쿠키와 CSRF 헤더가 개발에서 먼저 검증된다.
 
-| 역할 | 전화번호 | 비밀번호 |
-|---|---|---|
-| 관람자 | `010-1234-5671` | `gallery1234` |
-| 큐레이터 | `010-0000-0001` | `curator1234` |
+로그인 계정은 백엔드 마이그레이션 시드의 큐레이터(`CURATOR_SEED_PHONE`)로 시작해서,
+B-3 회원 관리의 대행 가입으로 관람자를 만든다. 큐레이터로 들어가면 A 첫 화면 우상단에
+`Curator K` 링크가 생기고, 관리자 화면(B 계열)으로 갈 수 있다.
 
-큐레이터로 들어가면 A 첫 화면 우상단에 `Curator K` 링크가 생기고, 관리자 화면(B 계열)으로 갈 수 있다.
+### 환경 변수
+
+`.env`(공통) → `.env.development` / `.env.production`(모드별) → `.env.local`(개인, 커밋 안 함)
+순으로 덮인다. 형식과 의미는 `.env.example`에 있다. **비밀값은 어느 파일에도 두지 않는다** —
+`VITE_` 변수는 전부 번들에 그대로 실린다.
 
 ### 명령
 
@@ -54,7 +59,7 @@ src/
 ├── features/    화면 단위. 한 화면을 지우면 폴더 하나가 지워진다
 ├── entities/    도메인 모델 + 도메인 표현 컴포넌트 (기능 간 공유)
 ├── shared/      도메인 무지식 공용 — api · ui · hooks · lib · config
-└── mocks/       ⚠ 데모 전용. 백엔드 연동 시 통째로 지운다
+└── test/        테스트 지원 — 프로바이더 렌더러 · API 스텁 · 서버 원형 픽스처
 ```
 
 ### 레이어 규칙
@@ -93,7 +98,7 @@ src/
 | 큰 글씨 모드는 컴포넌트를 바꾸지 않는다 | `html[data-font-scale]` 하나로 타이포와 그리드 열 수(3→2)가 함께 바뀐다 |
 | 되돌아갈 길이 항상 보인다 | 모든 화면 하단의 `BackLink`. 대상은 페이지가 명시적으로 지정한다 |
 | 제스처에는 항상 대안이 있다 | 스와이프 ↔ 하단 링크·화살표 키, 핀치 ↔ `크게 보기` 버튼·더블탭 |
-| 문구는 한 곳에만 있다 | `shared/config/messages.ts`. JSX에 한국어 문자열을 직접 쓰지 않으며 **`lint:design`이 검사한다**(데모·목 계층만 예외) |
+| 문구는 한 곳에만 있다 | `shared/config/messages.ts`. JSX에 한국어 문자열을 직접 쓰지 않으며 **`lint:design`이 검사한다**(문구 원천과 테스트만 예외) |
 | 되돌아갈 길은 두 곳에 그려지지 않는다 | 페이지가 `BackLink` 하나만 두면 상단 `←`는 레이아웃 슬롯으로 **포털**된다. 대상이 어긋날 수 없다 |
 | 서버 계약은 한 곳에서만 안다 | `shared/api`가 봉투·오류·페이지네이션을 흡수하고, 바깥은 도메인 타입만 다룬다 |
 | 관리자 코드는 관람자 경로로 흘러들지 않는다 | `RequireCurator` 아래 `lazy()` + 청크 분리. **`scripts/check-bundle.mjs`가 산출물을 직접 보고 검사하며, 섞이면 빌드가 실패한다** |
@@ -102,38 +107,51 @@ src/
 
 ---
 
-## 데모(Mock) 계층
+## 소셜 로그인
 
-현재 모든 데이터는 `src/mocks`의 인메모리 목에서 온다. **제품 코드는 이 폴더를 알지 못한다** —
-API 함수 안에서만 참조되며, 그 자리에는 실제 호출이 주석으로 나란히 놓여 있다.
+카카오·구글을 **리다이렉트 방식**으로 지원한다(팝업을 쓰지 않는다). 흐름·방어·계정 정책은
+[`docs/08-SOCIAL-AUTH.md`](../docs/08-SOCIAL-AUTH.md)가 소유한다.
+
+프런트에는 **제공자 설정이 없다.** `GET /auth/social/providers`가 켜진 목록을 주고, 버튼은
+서버가 준 `start_url`을 그대로 쓰는 `<a href>`다. 자격 증명은 백엔드 `.env`에만 있다.
+
+```
+A-1 [카카오로 시작하기]  →  /api/auth/social/kakao/start  →  카카오 동의
+                                                              │
+                    연결됨 → 세션 쿠키 + /gallery  ←──────────┤
+                    미연결 → 연결 티켓 + /auth/link  ←────────┘
+```
+
+로컬에서 확인하려면 백엔드 `.env`에 `KAKAO_CLIENT_ID`(또는 `GOOGLE_CLIENT_ID`)와
+`SOCIAL_REDIRECT_BASE_URL=http://localhost:5173`을 넣는다. 키가 없으면 목록이 비고
+A-1에 소셜 영역이 그려지지 않는다 — 전화번호 로그인은 그대로 동작한다.
+
+---
+
+## 서버와 닿는 지점
+
+화면은 서버에 **`shared/api/httpClient` 하나로만** 닿는다. 그 바깥에서 `fetch`를 부르는
+곳은 둘뿐이며 각각 격리되어 있다 — 서비스워커(`src/sw.ts`)와 S3 직접 업로드
+(`useUploadQueue`의 `XMLHttpRequest`, 20MB 파일은 API Gateway를 통과할 수 없다).
+
+경로는 `shared/api/endpoints.ts`에만 있고, snake_case 응답은 각 `entities/*/api/mappers.ts`가
+도메인 타입으로 바꾼다. `Raw*` 타입이 매퍼 밖으로 새어 나가지 않는 것이 이 분리의 목적이다 —
+API가 바뀌어도 화면이 흔들리지 않는다.
+
+그래서 테스트가 가로챌 지점도 하나다. `src/test/utils/apiStub.ts`가 `fetch`를 라우트 표로
+바꾸고 **서버 원형 응답**(`src/test/fixtures/server.ts`)을 넣는다. 화면·훅·매퍼는 실제 코드
+그대로 돌아가므로 매퍼도 함께 검증된다.
 
 ```ts
-export async function fetchCurrentExhibition(): Promise<Exhibition> {
-  // [API]
-  // const raw = await httpClient.get<RawExhibitionDetail>(endpoints.exhibitions.current())
-  // return toExhibition(raw)
-
-  // [MOCK]
-  const raw = await exhibitionMock.getCurrentExhibition()
-  return toExhibition(raw)
-}
+const api = stubApi({
+  'GET /exhibitions/current': () => currentExhibition(),
+  'POST /exhibitions/{date}/view': () => ({ recorded: true }),
+})
+expect(api.callsFor('POST /exhibitions/{date}/view')).toHaveLength(1)
 ```
 
-교체 지점 전수는 한 줄로 찾는다.
-
-```bash
-grep -rn "\[MOCK\]" src/
-```
-
-제거 절차와 규칙은 [`src/mocks/README.md`](src/mocks/README.md)에 있다.
-
-브라우저에 남는 것은 **세션과 열람 기록뿐**이다(`gk.demo.*` 키). 새로고침에 로그인이
-풀리면 90일 자동 로그인(GAP-14)을 보여주려는 화면이 정반대로 동작하기 때문이다.
-전시 원고와 업로드한 이미지는 일부러 남기지 않는다.
-
-목은 **화면 로직을 대신하지 않는다.** 발행 조건 판정, `edit_mode` 결정, 연장 라벨 생성처럼
-서버가 소유해야 할 규칙은 `src/mocks/db.ts`가 서버 흉내를 내어 계산한다. 그래야 실제 API로
-바꿀 때 화면 코드가 그대로 남는다.
+스텁하지 않은 경로를 부르면 404 봉투가 돌아온다. **화면이 무엇을 부르는지가 곧 계약이므로**
+조용히 통과시키지 않는다.
 
 ---
 
@@ -147,10 +165,11 @@ grep -rn "\[MOCK\]" src/
   **603KB**다(한글 2,780자 + 굵기 축). 굵기별 정적 서브셋은 하나가 261KB이므로
   400·500·600 셋을 합치면 가변 1개보다 무겁다 — 가변 1개가 여전히 최선이다.
   `font-display: swap`이라 렌더를 막지 않고, 프리캐시 대신 워커의 1년 캐시가 받는다.
-- **VAPID 키** — 비어 있으면 푸시 구독이 합성 값으로 대체된다(화면 흐름은 끝까지 확인 가능).
-  실제 발송에는 `VITE_VAPID_PUBLIC_KEY`와 백엔드의 개인키가 함께 필요하다.
+- **VAPID 키** — `VITE_VAPID_PUBLIC_KEY`가 비어 있으면 **구독을 만들지 않는다.** 서버에
+  등록할 수 없는 구독을 만들어 봐야 알림이 오지 않으므로 없는 편이 정직하다. 백엔드
+  `.env`의 `VAPID_PUBLIC_KEY`와 **같은 값**이어야 하고, 발송에는 백엔드의 개인키가 함께 필요하다.
 - **v1.1 화면** — A-2 비밀번호 재설정과 B-1/B-1-1 관람 현황은 스키마가 확정되어 있어
-  화면까지 함께 구현했다. 데모 인증번호는 `000000`이다.
+  화면까지 함께 구현했다.
 - **팔레트 미세 조정** — 디자인 문서 §3.1의 `neutral-500`·`warning-500`은 실측 대비가
   §3.3의 AA 기준(4.5:1)에 못 미쳤다(각 4.04·3.65). 색상을 유지한 채 최소한으로 낮춰
   4.6:1을 맞췄고, `lint:design`이 이 값을 매번 다시 계산한다.

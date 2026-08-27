@@ -21,9 +21,15 @@ export type ArtworkFrameProps = {
 }
 
 export function ArtworkFrame({ artwork, onOpenViewer, onRetry }: ArtworkFrameProps) {
+  /**
+   * 이미지가 아직 없는 자리(미리보기의 미완성 슬롯, API 문서 §9.12)에는 확대 조작을
+   * 그리지 않는다. **없는 그림을 확대하라고 권하면 안 된다** — 눌러도 빈 화면이 열린다.
+   */
+  const canZoom = Boolean(onOpenViewer) && artwork.image !== null
+
   return (
     <figure className="relative m-0">
-      {onOpenViewer ? (
+      {canZoom ? (
         <button
           type="button"
           onClick={onOpenViewer}
@@ -36,7 +42,7 @@ export function ArtworkFrame({ artwork, onOpenViewer, onRetry }: ArtworkFramePro
         <ArtworkImage image={artwork.image} alt={artworkAltText(artwork)} onRetry={onRetry} />
       )}
 
-      {onOpenViewer ? (
+      {canZoom ? (
         <div className="absolute bottom-2 right-2">
           <Button
             variant="secondary"

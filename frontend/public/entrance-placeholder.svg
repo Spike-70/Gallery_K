@@ -1,0 +1,12 @@
+<!--
+  개발용 정문 이미지 자리표시자.
+  실제 배포에서는 `VITE_ENTRANCE_IMAGE_URL`이 `/media/public/entrance.jpg`를 가리킨다.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 720" width="960" height="720" role="presentation">
+  <rect width="960" height="720" fill="#e8e4dd" />
+  <rect x="300" y="180" width="360" height="540" fill="#d6d0c6" />
+  <rect x="330" y="230" width="140" height="490" fill="#c6bfb3" />
+  <rect x="490" y="230" width="140" height="490" fill="#cec7bb" />
+  <path d="M270 180 L480 60 L690 180 Z" fill="#cbc4b8" />
+  <rect x="0" y="700" width="960" height="20" fill="#bdb5a8" />
+</svg>

@@ -15,8 +15,8 @@ from chalicelib.core.errors import (
 
 
 def test_catalog_covers_every_documented_code() -> None:
-    """API 문서 §5의 43개 코드. 값이 늘거나 줄면 문서와 함께 바뀌어야 한다."""
-    assert len(CATALOG) == 43
+    """API 문서 §5의 50개 코드. 값이 늘거나 줄면 문서와 함께 바뀌어야 한다."""
+    assert len(CATALOG) == 50
     declared = {
         value
         for name, value in vars(ErrorCode).items()

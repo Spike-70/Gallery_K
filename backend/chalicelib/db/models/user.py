@@ -1,4 +1,4 @@
-"""회원과 인증 부수 테이블 (DB 문서 §4.1–§4.3)."""
+"""회원과 인증 부수 테이블 (DB 문서 §4.1–§4.4)."""
 
 from __future__ import annotations
 
@@ -23,7 +23,15 @@ from sqlmodel import Field, SQLModel
 
 from chalicelib.config.constants import PHONE_PATTERN
 from chalicelib.db.models.base import TimestampMixin, UUIDPKMixin
-from chalicelib.db.models.enums import CreatedVia, FontScale, PushPlatform, ThrottleScope, UserRole, values
+from chalicelib.db.models.enums import (
+    CreatedVia,
+    FontScale,
+    PushPlatform,
+    SocialProvider,
+    ThrottleScope,
+    UserRole,
+    values,
+)
 
 
 def _in_check(column: str, allowed: tuple[str, ...]) -> str:
@@ -75,7 +83,11 @@ class AppUser(UUIDPKMixin, TimestampMixin, SQLModel, table=True):
 
     # 신원·인증
     phone: str = Field(sa_column=Column("phone", String(11), nullable=False))
-    password_hash: str = Field(sa_column=Column("password_hash", String(72), nullable=False))
+    #: 소셜로만 가입한 회원은 비밀번호가 없다(소셜 문서 §5.1). `verify_password`가
+    #: `None`을 미가입과 같은 비용으로 처리하므로 로그인 경로는 분기 없이 그대로 동작한다.
+    password_hash: str | None = Field(
+        default=None, sa_column=Column("password_hash", String(72), nullable=True)
+    )
     name: str = Field(sa_column=Column("name", String(20), nullable=False))
     role: str = Field(
         default=UserRole.VIEWER,
@@ -124,6 +136,45 @@ class AppUser(UUIDPKMixin, TimestampMixin, SQLModel, table=True):
     created_via: str = Field(
         default=CreatedVia.SELF,
         sa_column=Column("created_via", String(10), nullable=False, server_default=sa_text("'self'")),
+    )
+
+
+class SocialIdentity(UUIDPKMixin, TimestampMixin, SQLModel, table=True):
+    """외부 계정 연결 (DB 문서 §4.4, 소셜 문서 §5).
+
+    **소셜은 로그인 수단이지 신원이 아니다**(SA-2). 신원은 `(provider, provider_uid)`
+    하나뿐이며 이메일로 계정을 병합하지 않는다 — 제공자가 이메일 소유를 검증하지
+    않으면 그 병합이 곧 계정 탈취 경로가 된다.
+
+    제공자 access·refresh token은 저장하지 않는다(SA-3). 로그인이 성립하면 버린다.
+    """
+
+    __tablename__ = "social_identity"
+    __table_args__ = (
+        UniqueConstraint("provider", "provider_uid", name="uq_social_identity_provider_uid"),
+        CheckConstraint(_in_check("provider", values(SocialProvider)), name="provider"),
+        Index("ix_social_identity_user_id", "user_id"),
+    )
+
+    user_id: uuid.UUID = Field(
+        sa_column=Column(
+            "user_id",
+            Uuid,
+            ForeignKey("app_user.id", ondelete="CASCADE", name="fk_social_identity_user_id"),
+            nullable=False,
+        )
+    )
+    provider: str = Field(sa_column=Column("provider", String(20), nullable=False))
+    #: 제공자가 발급하는 불변 식별자. 카카오는 숫자, 구글은 21자리 문자열이다.
+    provider_uid: str = Field(sa_column=Column("provider_uid", String(191), nullable=False))
+    #: 카카오는 선택 동의라 비어 올 수 있다. 표시용이며 신원 판정에 쓰지 않는다.
+    email: str | None = Field(default=None, sa_column=Column("email", String(255), nullable=True))
+    display_name: str | None = Field(
+        default=None, sa_column=Column("display_name", String(100), nullable=True)
+    )
+    linked_at: _dt.datetime = Field(sa_column=Column("linked_at", DateTime(timezone=True), nullable=False))
+    last_login_at: _dt.datetime | None = Field(
+        default=None, sa_column=Column("last_login_at", DateTime(timezone=True), nullable=True)
     )
 
 

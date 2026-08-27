@@ -12,7 +12,7 @@ React 19 / Vite / TS / Tailwind 3 + CVA / TanStack Query 5 / Zustand 5 / RHF 7 +
 
 `app → features → entities → shared` 단방향. 임포트는 항상 `@/` 절대 경로.
 
-금지: 기능 간 상호 참조 / `entities→features,app` / `shared→상위` / 타 기능 내부 파일 깊게 참조(`index.ts`만) / 순환 / 제품 코드의 `mocks` 참조.
+금지: 기능 간 상호 참조 / `entities→features,app` / `shared→상위` / 타 기능 내부 파일 깊게 참조(`index.ts`만) / 순환.
 예외는 `.dependency-cruiser.cjs`에만 존재한다. 규칙을 우회하지 말고 공통을 한 층 위로 올린다.
 
 배치: 한 화면 전용 → `features/{기능}/` · 두 기능 이상이 쓰는 도메인 개념 → `entities/{도메인}/` · 도메인 무지식 → `shared/` · 라우터·프로바이더·레이아웃 → `app/`.
@@ -44,7 +44,7 @@ BackLink · BackLinkGroup · TopBackSlot · Badge · Banner · BottomSheet · Bu
 | `errorMessages` | `resolveErrorMessage`(서버 문구 우선). 프런트가 코드별 문구를 새로 정의하지 않는다 |
 | `endpoints` | URL 경로 상수 |
 | `queryClient` | `CACHE_POLICY`(landing·currentExhibition·pastExhibition·archive·artwork·me·admin·stats). staleTime/gcTime 숫자를 쿼리에 직접 쓰지 않는다 |
-| `pagination` | `toCursorPage`/`toNumberedPage`(+목용 paginate*) |
+| `pagination` | `toCursorPage`/`toNumberedPage` |
 | `envelope` | 봉투 타입 · `isSuccessEnvelope` · `createMeta` |
 | `types` | 서버 원형 `Raw*` 타입(snake_case). **바깥으로 새어 나가지 않는다** |
 
@@ -98,9 +98,24 @@ landing · auth · gallery · exhibition-theme · artwork · archive · settings
 - 화면 상태: 로딩 `Skeleton`/`ScreenSkeleton`(전체 화면 스피너 금지) · 빈 상태 `EmptyState` · 오류 `ErrorState`(재시도 + requestId) · 공지 `Banner` · 일시 알림 `toast`. 오류 화면에도 되돌아갈 링크를 남긴다.
 - 서버 상태는 Query, 화면 조작 상태는 지역 상태 또는 소형 Zustand 스토어(`sessionStore`·`viewerStore`·`toastStore`). 서버 데이터를 스토어에 복사하지 않는다.
 
-## 12. 목(mock) 계층
+## 12. 백엔드 연동
 
-데모 전용이며 제품 코드가 참조하지 않는다. `entities/*/api/*.ts` 안에서만 `// [API]` 주석 블록과 `// [MOCK]` 실행 블록이 나란히 놓인다. **API 함수를 새로 만들면 두 블록을 같은 형태로 함께 작성한다.** 핸들러는 `Raw*` 타입을 반환하고 변환은 매퍼가 한다. 도메인 규칙(발행 조건·`edit_mode` 등)은 `mocks/db.ts`가 서버를 흉내 내어 계산하며 화면 코드로 새어 나오지 않는다. 상세는 `src/mocks/README.md`.
+실제 API에 붙어 있다. 목 계층은 없다 — `fetch`는 `httpClient` 안에서만 부르고, 예외는 서비스워커(`src/sw.ts`)와 S3 직접 업로드(`useUploadQueue`)뿐이다.
+
+- 개발: 백엔드 `make serve`(8000) + `npm run dev`(5173). dev 서버가 `/api`를 프록시하며 접두를 뗀다 — `/api`는 배포에서 CloudFront가 붙이는 경로다. 동일 오리진 조건을 로컬에서 재현하는 것이 목적이다.
+- 서버 스키마는 **모르는 필드를 거부한다**(`extra="forbid"`). 요청 바디에 화면 편의용 필드를 얹지 않는다.
+- 날짜의 "오늘"은 서버가 정한다(`meta.server_date`). 단말 시계로 조회 범위를 역산하지 않는다.
+- 새 API 함수: `endpoints.ts`에 경로 추가 → `*Api.ts`에서 `httpClient` 호출 + 매퍼 적용 → `queries.ts`에 훅. `Raw*`는 매퍼 밖으로 나가지 않는다.
+
+### 12.1 소셜 로그인 (카카오·구글)
+
+OAuth 2.0 Authorization Code + PKCE, **리다이렉트 방식**. 기준 문서는 `docs/08-SOCIAL-AUTH.md`.
+
+- 인가 시작(`/api/auth/social/{p}/start`)은 **`httpClient`를 타지 않는다.** `<a href>`의 목적지이며 브라우저가 직접 이동한다 — `fetch`로 부르면 302를 따라가 제공자 HTML을 받게 되고 리다이렉트 방식이 성립하지 않는다. `onClick`도 쓰지 않는다(JS 로드 전 클릭이 무반응이면 대상 사용자는 반복해서 누른다).
+- 콜백은 302로 끝나므로 **오류 봉투가 오지 않는다.** 코드만 `?social_error=`로 오고 A-1이 `fallbackMessageFor`로 한국어를 만든다 — `errorMessages`가 유일한 원천인 몇 안 되는 경우다.
+- 소셜 버튼은 `entities/session/ui/SocialButtons`. A-1과 D가 함께 쓰므로 `features`가 아니라 `entities`에 있다.
+- `SessionUser.hasPassword=false`면 소셜 전용 계정이다. D 설정이 비밀번호 변경 항목을 **감춘다**(비활성이 아니라).
+- 연결 티켓·`state`는 전부 HttpOnly 쿠키다. 화면은 읽지 못하며 만료는 `SOCIAL_LINK_EXPIRED`로만 안다.
 
 ## 13. 설계 문서와 다른 실제 구현
 
@@ -109,3 +124,5 @@ FA §2가 지정한 `date-fns`·`@dnd-kit`·`vite-plugin-pwa`·MSW·Playwright·
 ## 14. 테스트
 
 `__tests__/`에 두고 `test/utils/renderWithProviders`(route 옵션 지원)로 렌더한다. 프로바이더 조립을 테스트마다 반복하지 않는다.
+
+서버는 `test/utils/apiStub`의 `stubApi({ 'GET /exhibitions/current': () => ... })`로 대체한다. `fetch` 한 지점만 가로채므로 화면·훅·매퍼는 실제 코드 그대로 돈다. 응답은 도메인 타입이 아니라 **서버 원형**(`test/fixtures/server.ts`의 `Raw*` 빌더)으로 만든다 — 그래야 매퍼도 함께 검증된다. 목록은 `paged()`, 오류 봉투는 `apiError()`. 스텁하지 않은 경로는 404가 되며 조용히 통과하지 않는다.

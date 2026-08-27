@@ -32,7 +32,18 @@ FROZEN = dt.datetime(2026, 8, 27, 3, 0, tzinfo=dt.UTC)
 _PLACEHOLDERS = {
     "date": "2026-08-27",
     "position": "1",
+    "provider": "kakao",
 }
+
+#: **봉투 규약의 예외**(API 문서 §2.2). 브라우저 내비게이션의 종착지라 응답의 본체가
+#: `Location` 헤더다. 면제는 여기에 이름을 적어야만 성립하며, 적힌 경로는 아래
+#: `test_redirect_routes_are_the_only_envelope_exception`이 **실제로 302인지** 확인한다.
+_REDIRECT_ROUTES: frozenset[tuple[str, str]] = frozenset(
+    {
+        ("GET", "/auth/social/{provider}/start"),
+        ("GET", "/auth/social/{provider}/callback"),
+    }
+)
 
 #: 본문이 필요한 경로의 최소 유효 입력. 없으면 빈 객체를 보낸다.
 _BODIES: dict[tuple[str, str], dict[str, Any]] = {
@@ -94,6 +105,13 @@ _BODIES: dict[tuple[str, str], dict[str, Any]] = {
     },
     ("PATCH", "/admin/notices/{notice_id}"): {"body": "수정"},
     ("GET", "/admin/stats/members"): {},
+    # 연결 티켓 쿠키가 없으므로 SOCIAL_LINK_EXPIRED 봉투가 나온다. 그것이 검사 대상이다.
+    ("POST", "/auth/social/link"): {"phone": "01099990000", "password": "password123"},
+    ("POST", "/auth/social/signup"): {
+        "phone": "01066660000",
+        "name": "소셜",
+        "agreed_terms": True,
+    },
 }
 
 #: 쿼리 파라미터가 필수인 경로.
@@ -143,12 +161,15 @@ def test_every_registered_route_answers_with_the_standard_envelope(
         "member_id": str(member.id),
         "notice_id": str(notice.id),
         "subscription_id": str(member.id),
+        "identity_id": str(member.id),
     }
 
     checked = 0
     for entry in REGISTRY:
         # 세션을 끊는 경로는 이후 검사를 방해하므로 제외한다. 각자의 테스트가 이미 덮는다.
         if entry.path in {"/auth/logout", "/me"} and entry.method in {"POST", "DELETE"}:
+            continue
+        if (entry.method, entry.path) in _REDIRECT_ROUTES:
             continue
 
         url = _fill(entry.path, ids) + _QUERIES.get(entry.path, "")
@@ -176,6 +197,29 @@ def test_every_registered_route_answers_with_the_standard_envelope(
         checked += 1
 
     assert checked >= 45, f"검사한 라우트가 너무 적습니다: {checked}"
+
+
+def test_redirect_routes_are_the_only_envelope_exception(api_client: Any) -> None:
+    """면제 목록의 경로가 **실제로 리다이렉트인지** 확인한다.
+
+    면제만 적어 두고 검사하지 않으면 그 목록은 봉투 규약을 우회하는 뒷문이 된다.
+    여기서 302와 `Location`을 요구하므로, 면제된 경로도 자기 규약을 지킨다.
+
+    **목적지는 검사하지 않는다.** 제공자 자격이 설정되어 있으면 제공자로, 없으면
+    A-1으로 간다 — 개발자의 `.env`에 따라 갈리는 값이다. 이 검사의 요점은 어느
+    경우든 JSON 봉투가 아니라 리다이렉트로 끝난다는 것이며, 목적지별 동작은
+    `test_social_routes.py`가 자격을 명시적으로 고정해 두고 검증한다.
+    """
+    from chalicelib.api.routes._base import REGISTRY
+
+    registered = {(entry.method, entry.path) for entry in REGISTRY}
+    assert registered >= _REDIRECT_ROUTES, "면제 목록에 없는 라우트가 있습니다"
+
+    for method, path in sorted(_REDIRECT_ROUTES):
+        response = getattr(api_client.http, method.lower())(_fill(path, {}))
+        assert response.status_code == 302, f"{method} {path} → {response.status_code}"
+        assert response.headers.get("Location"), f"{method} {path}: Location 이 없다"
+        assert response.body in (b"", ""), f"{method} {path}: 리다이렉트에 본문이 있다"
 
 
 def test_admin_routes_are_never_cached(api_client: Any, write_session: Session) -> None:

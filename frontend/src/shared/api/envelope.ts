@@ -67,11 +67,11 @@ export function isSuccessEnvelope<T>(envelope: ApiEnvelope<T>): envelope is Succ
   return envelope.success === true
 }
 
-/** 목·테스트에서 봉투를 만들 때 쓰는 헬퍼. 프로덕션 코드가 봉투를 조립하지 않는다. */
+/** 테스트에서 봉투를 만들 때 쓰는 헬퍼. 프로덕션 코드가 봉투를 조립하지 않는다. */
 export function createMeta(overrides: Partial<ResponseMeta> = {}): ResponseMeta {
   const now = new Date()
   return {
-    request_id: `mock-${now.getTime().toString(36)}`,
+    request_id: `test-${now.getTime().toString(36)}`,
     server_time: now.toISOString(),
     server_date: now.toISOString().slice(0, 10),
     api_version: 'v1',

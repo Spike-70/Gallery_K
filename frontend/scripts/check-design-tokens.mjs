@@ -36,16 +36,14 @@ const INLINE_STYLE_ALLOWED = new Set([
   'src/shared/ui/PullToRefresh.tsx',
 ])
 
-/** 색상값이 허용되는 곳 — 데모 그림을 만드는 생성기(UI 색이 아니다) */
-const COLOR_ALLOWED = [/^src\/mocks\//]
+/** 색상값이 허용되는 곳 — 없다. UI 색은 예외 없이 의미 토큰에서 온다. */
+const COLOR_ALLOWED = []
 
-/** 한국어 문자열이 허용되는 곳 — 문구 원천 자신과 데모 전용 계층 */
+/** 한국어 문자열이 허용되는 곳 — 문구 원천 자신과 테스트 */
 const KOREAN_ALLOWED = [
   /^src\/shared\/config\/messages\.ts$/,
   /^src\/shared\/api\/errorMessages\.ts$/, // 오류 코드 폴백 맵 — 문구의 두 번째 원천(§7.2)
   /^src\/features\/auth\/content\/terms\.ts$/,
-  /^src\/mocks\//,
-  /^src\/features\/auth\/components\/DemoAccountsNotice\.tsx$/, // 데모 전용. 목과 함께 사라진다
   /__tests__/,
   /\.test\.tsx?$/,
   /^src\/test\//,

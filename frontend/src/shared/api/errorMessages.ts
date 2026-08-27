@@ -29,6 +29,19 @@ const FALLBACK_MESSAGES: Record<string, string> = {
   [ERROR_CODES.resetCodeInvalid]: '인증번호가 맞지 않습니다.',
   [ERROR_CODES.resetCodeExpired]: '인증번호가 만료되었습니다. 다시 받아 주세요.',
 
+  // 소셜 로그인은 **리다이렉트로 끝나므로 서버 문구가 오지 않는다.** 콜백은 코드만
+  // `?social_error=`로 실어 보내고 화면이 여기서 번역한다 — 이 맵이 유일한 원천인
+  // 몇 안 되는 경우다(소셜 문서 §10).
+  [ERROR_CODES.socialProviderUnknown]: '지원하지 않는 로그인 방식입니다.',
+  [ERROR_CODES.socialDisabled]: '지금은 이 방식으로 로그인할 수 없습니다.',
+  [ERROR_CODES.socialStateInvalid]: '로그인 요청이 만료되었습니다. 처음부터 다시 시도해 주세요.',
+  [ERROR_CODES.socialExchangeFailed]:
+    '로그인 제공자와 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.',
+  [ERROR_CODES.socialLinkExpired]: '연결 시간이 지났습니다. 처음부터 다시 시도해 주세요.',
+  [ERROR_CODES.socialAlreadyLinked]: '이미 다른 계정에 연결된 소셜 계정입니다.',
+  [ERROR_CODES.socialLastIdentity]:
+    '마지막 로그인 수단은 해제할 수 없습니다. 비밀번호를 먼저 설정해 주세요.',
+
   [ERROR_CODES.exhibitionNotFound]: '전시를 찾을 수 없습니다.',
   [ERROR_CODES.exhibitionNotOpened]: '첫 전시를 준비하고 있습니다',
   [ERROR_CODES.exhibitionBackfillForbidden]:

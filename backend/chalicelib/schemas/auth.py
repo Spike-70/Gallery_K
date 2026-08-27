@@ -82,6 +82,8 @@ class SessionUserOut(BaseModel):
     notify_enabled: bool
     notify_at: str
     must_change_password: bool
+    #: false면 소셜로만 로그인하는 계정이다. D 설정이 비밀번호 변경 항목을 감춘다.
+    has_password: bool
     created_at: str
 
 
@@ -104,3 +106,55 @@ class SignupOut(BaseModel):
 class PasswordResetRequestOut(BaseModel):
     expires_in_seconds: int
     resend_after_seconds: int
+
+
+# ── 소셜 로그인 (API 문서 §6.11–§6.15) ─────────────────────────────────────
+
+
+class SocialLinkIn(PhoneMixin):
+    """A-4 `이미 회원이신가요?` — 비밀번호로 계정 소유를 증명한다(소셜 문서 §4).
+
+    로그인과 같은 이유로 길이 정책을 강제하지 않는다 — 정책 이전에 만들어진
+    비밀번호도 들어와야 하고, 길이로 존재 여부를 흘리지 않기 위해서다.
+    """
+
+    model_config = STRICT
+
+    password: str = Field(min_length=1, max_length=PASSWORD_MAX_LENGTH)
+
+
+class SocialSignupIn(PhoneMixin):
+    """A-4 `처음이신가요?` — 비밀번호를 받지 않는다. 소셜이 곧 로그인 수단이다."""
+
+    model_config = STRICT
+
+    name: MemberName
+    agreed_terms: Literal[True]
+
+
+class SocialProviderOut(BaseModel):
+    provider: Literal["kakao", "google"]
+    label: str
+    start_url: str
+
+
+class SocialProvidersOut(BaseModel):
+    providers: list[SocialProviderOut]
+
+
+class SocialIdentityOut(BaseModel):
+    """§3.10 — **제공자 토큰은 담기지 않는다**(소셜 문서 SA-3)."""
+
+    id: str
+    provider: Literal["kakao", "google"]
+    label: str
+    email: str | None
+    display_name: str | None
+    linked_at: str
+    last_login_at: str | None
+
+
+class SocialIdentitiesOut(BaseModel):
+    identities: list[SocialIdentityOut]
+    #: false면 화면이 해제 버튼을 잠근다. 마지막 로그인 수단이기 때문이다(SA-6).
+    can_unlink: bool

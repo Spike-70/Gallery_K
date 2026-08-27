@@ -41,6 +41,9 @@ def serialize_session_user(user: AppUser) -> dict[str, Any]:
         "notify_enabled": user.notify_enabled,
         "notify_at": format_time_of_day(user.notify_at),
         "must_change_password": user.must_change_password,
+        # 소셜로만 가입한 회원은 비밀번호가 없다(소셜 문서 §5.2). D 설정 화면이 이 값으로
+        # 비밀번호 변경 항목을 감춘다 — 없는 비밀번호를 바꾸라고 하지 않는다.
+        "has_password": bool(user.password_hash),
         "created_at": format_rfc3339(user.created_at),
     }
 
