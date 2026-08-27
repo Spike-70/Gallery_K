@@ -1,0 +1,1126 @@
+<title>갤러리 K PRD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@300;400;500;600&display=swap">
+<style>
+:root{
+  --ground:#F1F4F5; --surface:#FBFCFC; --sunk:#E7ECEE;
+  --ink:#11181D; --ink-2:#3A4A53; --muted:#65767F;
+  --rule:#D5DDE0; --hair:#E3E9EB;
+  --accent:#175A73; --accent-2:#2C7E9B; --accent-soft:#E2ECEF;
+  --ok:#3D7433; --ok-soft:#E4EFE1;
+  --warn:#A66614; --warn-soft:#F6EBDA;
+  --new:#7A3D6B; --new-soft:#F0E6ED;
+  --shadow:0 1px 2px rgba(17,24,29,.05);
+  --serif:'Gowun Batang','Nanum Myeongjo',ui-serif,Georgia,serif;
+  --sans:'IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0C1216; --surface:#131C21; --sunk:#0F171B;
+    --ink:#E7EDEF; --ink-2:#B4C2C8; --muted:#87979F;
+    --rule:#243138; --hair:#1C272C;
+    --accent:#79B9D2; --accent-2:#9BCFE2; --accent-soft:#17272E;
+    --ok:#87BE78; --ok-soft:#182515;
+    --warn:#D9A44F; --warn-soft:#2A2013;
+    --new:#C79BB8; --new-soft:#241A21;
+    --shadow:0 1px 2px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0C1216; --surface:#131C21; --sunk:#0F171B;
+  --ink:#E7EDEF; --ink-2:#B4C2C8; --muted:#87979F;
+  --rule:#243138; --hair:#1C272C;
+  --accent:#79B9D2; --accent-2:#9BCFE2; --accent-soft:#17272E;
+  --ok:#87BE78; --ok-soft:#182515;
+  --warn:#D9A44F; --warn-soft:#2A2013;
+  --new:#C79BB8; --new-soft:#241A21;
+  --shadow:0 1px 2px rgba(0,0,0,.3);
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:var(--sans); font-weight:400; font-size:17px; line-height:1.75;
+  -webkit-font-smoothing:antialiased; word-break:keep-all; overflow-wrap:anywhere;
+}
+::selection{background:var(--accent-soft); color:var(--ink)}
+a{color:var(--accent); text-underline-offset:.2em; text-decoration-thickness:.06em}
+a:focus-visible,button:focus-visible{outline:2px solid var(--accent-2); outline-offset:3px; border-radius:2px}
+
+/* ---------- masthead ---------- */
+.mast{border-bottom:1px solid var(--rule); background:var(--surface)}
+.mast__in{max-width:78rem; margin:0 auto; padding:3.5rem 1.5rem 2.75rem; display:flex; flex-direction:column; gap:1.5rem}
+.mast__eyebrow{font-family:var(--mono); font-size:.7rem; letter-spacing:.22em; text-transform:uppercase; color:var(--accent); margin:0}
+.mast__title{font-family:var(--serif); font-weight:700; font-size:clamp(2.3rem,6vw,3.6rem); line-height:1.12; margin:0; letter-spacing:-.015em; text-wrap:balance}
+.mast__title em{font-style:italic; font-weight:400}
+.mast__sub{font-size:1.05rem; color:var(--ink-2); max-width:38rem; margin:0; font-weight:300}
+.meta{display:grid; grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr)); gap:1px; background:var(--hair); border:1px solid var(--hair); margin-top:.75rem}
+.meta div{background:var(--surface); padding:.7rem .9rem}
+.meta dt{font-family:var(--mono); font-size:.66rem; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin:0 0 .15rem}
+.meta dd{margin:0; font-size:.9rem; font-weight:500}
+
+/* ---------- shell ---------- */
+.shell{max-width:78rem; margin:0 auto; padding:0 1.5rem 5rem; display:grid; grid-template-columns:14rem minmax(0,1fr); gap:3.5rem; align-items:start}
+.toc{position:sticky; top:1.5rem; padding-top:3rem; font-size:.83rem; line-height:1.5}
+.toc h2{font-family:var(--mono); font-size:.66rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); margin:0 0 .9rem; font-weight:500}
+.toc ol{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.42rem}
+.toc a{display:flex; gap:.55rem; color:var(--ink-2); text-decoration:none; padding:.12rem 0}
+.toc a:hover{color:var(--accent)}
+.toc a.on{color:var(--accent); font-weight:500}
+.toc .n{font-family:var(--mono); font-size:.72rem; color:var(--muted); flex:none; width:1.1rem; font-variant-numeric:tabular-nums}
+.toc a.on .n{color:var(--accent)}
+main{padding-top:3rem; display:flex; flex-direction:column; gap:4.5rem; min-width:0}
+
+/* ---------- sections ---------- */
+section{scroll-margin-top:1.5rem; display:flex; flex-direction:column; gap:1.4rem}
+.sec-head{display:flex; flex-direction:column; gap:.4rem; padding-bottom:.9rem; border-bottom:2px solid var(--ink)}
+.sec-head .n{font-family:var(--mono); font-size:.7rem; letter-spacing:.2em; color:var(--accent)}
+.sec-head h2{font-family:var(--serif); font-weight:700; font-size:clamp(1.6rem,3.4vw,2.15rem); margin:0; line-height:1.25; letter-spacing:-.01em; text-wrap:balance}
+h3{font-family:var(--serif); font-weight:700; font-size:1.32rem; margin:1.4rem 0 0; line-height:1.35; text-wrap:balance}
+h4{font-size:.98rem; font-weight:600; margin:1rem 0 0; color:var(--ink)}
+p{margin:0; max-width:62ch}
+main ul,main ol.list{margin:0; padding-left:1.15rem; display:flex; flex-direction:column; gap:.5rem; max-width:62ch}
+li::marker{color:var(--muted)}
+strong{font-weight:600}
+code{font-family:var(--mono); font-size:.86em; background:var(--sunk); padding:.1em .35em; border-radius:2px; color:var(--ink-2)}
+.lede{font-size:1.06rem; color:var(--ink-2); font-weight:300; max-width:58ch}
+
+/* ---------- pull quote ---------- */
+.pull{border-left:2px solid var(--accent); padding:.15rem 0 .15rem 1.15rem; font-family:var(--serif); font-size:1.18rem; line-height:1.65; color:var(--ink); max-width:52ch}
+.note{background:var(--sunk); border-left:2px solid var(--rule); padding:.85rem 1.1rem; font-size:.92rem; color:var(--ink-2); max-width:62ch}
+.note strong{color:var(--ink)}
+
+/* ---------- tables ---------- */
+.tw{overflow-x:auto; border:1px solid var(--hair); background:var(--surface)}
+table{border-collapse:collapse; width:100%; font-size:.88rem; line-height:1.6; min-width:34rem}
+th,td{text-align:left; padding:.62rem .8rem; border-bottom:1px solid var(--hair); vertical-align:top}
+thead th{font-family:var(--mono); font-size:.68rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); font-weight:500; background:var(--sunk); border-bottom:1px solid var(--rule); white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+td:first-child{white-space:nowrap}
+td.wrap:first-child,td.wrap{white-space:normal}
+.tw--num td{font-variant-numeric:tabular-nums}
+.c{text-align:center}
+
+/* ---------- tags ---------- */
+.tag{display:inline-block; font-family:var(--mono); font-size:.66rem; letter-spacing:.08em; padding:.12em .45em; border-radius:2px; white-space:nowrap; font-weight:500; vertical-align:.08em}
+.tag--gap{background:var(--accent-soft); color:var(--accent)}
+.tag--new{background:var(--new-soft); color:var(--new)}
+.tag--carry{background:var(--sunk); color:var(--muted); border:1px solid var(--rule)}
+pre.sql{margin:0; padding:1rem 1.15rem; font-family:var(--mono); font-size:.82rem; line-height:1.7; color:var(--ink-2); background:var(--surface)}
+pre.sql code{background:none; padding:0; font-size:inherit; color:inherit}
+.mock{display:flex; flex-direction:column; gap:.3rem; border:1px solid var(--rule); background:var(--surface); padding:1.1rem 1.3rem; max-width:20rem; box-shadow:var(--shadow); align-items:center; text-align:center}
+.mock__date{font-family:var(--mono); font-size:.75rem; color:var(--muted); letter-spacing:.04em}
+.mock__title{font-family:var(--serif); font-weight:700; font-size:1.3rem; line-height:1.3}
+.mock__from{font-size:.76rem; color:var(--muted)}
+.tag--ok{background:var(--ok-soft); color:var(--ok)}
+.tag--warn{background:var(--warn-soft); color:var(--warn)}
+.dot{display:inline-block; width:.45rem; height:.45rem; border-radius:50%; background:var(--accent)}
+
+/* ---------- persona cards ---------- */
+.cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(15rem,1fr)); gap:1px; background:var(--hair); border:1px solid var(--hair)}
+.card{background:var(--surface); padding:1.15rem 1.2rem; display:flex; flex-direction:column; gap:.6rem}
+.card__id{font-family:var(--mono); font-size:.68rem; letter-spacing:.14em; color:var(--accent)}
+.card__name{font-family:var(--serif); font-weight:700; font-size:1.08rem; margin:0; line-height:1.3}
+.card p{font-size:.87rem; margin:0; color:var(--ink-2)}
+.card dl{margin:0; display:flex; flex-direction:column; gap:.38rem; font-size:.85rem}
+.card dt{font-family:var(--mono); font-size:.64rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted)}
+.card dd{margin:.05rem 0 0; color:var(--ink-2)}
+
+/* ---------- wall label ---------- */
+.screen{display:flex; flex-direction:column; gap:1.15rem; scroll-margin-top:1.5rem}
+.label{display:grid; grid-template-columns:auto 1fr; gap:.15rem .95rem; border:1px solid var(--rule); background:var(--surface); padding:.85rem 1.05rem; max-width:36rem; box-shadow:var(--shadow)}
+.label__code{grid-row:span 2; align-self:start; font-family:var(--mono); font-weight:500; font-size:1.05rem; letter-spacing:.03em; color:var(--accent); padding-right:.95rem; border-right:1px solid var(--hair); min-width:3.1rem}
+.label__name{font-family:var(--serif); font-weight:700; font-size:1.22rem; margin:0; line-height:1.3}
+.label__meta{font-size:.8rem; color:var(--muted); margin:0}
+.spec{display:grid; grid-template-columns:auto minmax(0,1fr); gap:.55rem 1.1rem; max-width:62ch; font-size:.92rem; align-items:baseline}
+.spec dt{font-family:var(--mono); font-size:.66rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); white-space:nowrap; padding-top:.18rem}
+.spec dd{margin:0; color:var(--ink-2)}
+.spec dd strong{color:var(--ink)}
+
+/* ---------- diagram ---------- */
+.mermaid{background:var(--surface); border:1px solid var(--hair); padding:1.25rem; overflow-x:auto; text-align:center}
+figcaption{font-size:.8rem; color:var(--muted); margin-top:.5rem; font-family:var(--mono); letter-spacing:.04em}
+figure{margin:0}
+
+/* ---------- journey ---------- */
+.journey{display:flex; flex-direction:column; gap:1px; background:var(--hair); border:1px solid var(--hair)}
+.step{background:var(--surface); display:grid; grid-template-columns:2.6rem minmax(0,1fr); gap:0 1rem; padding:1rem 1.15rem}
+.step__n{font-family:var(--mono); font-size:.78rem; color:var(--accent); font-variant-numeric:tabular-nums; padding-top:.15rem}
+.step__b{display:flex; flex-direction:column; gap:.4rem; min-width:0}
+.step__t{font-weight:600; font-size:.98rem; display:flex; flex-wrap:wrap; gap:.5rem; align-items:baseline}
+.step__t span{font-family:var(--mono); font-size:.68rem; color:var(--muted); letter-spacing:.06em}
+.step__g{display:grid; grid-template-columns:repeat(auto-fit,minmax(12rem,1fr)); gap:.55rem 1.2rem; font-size:.86rem}
+.step__g div{display:flex; flex-direction:column; gap:.1rem}
+.step__g dt,.step__g b{font-family:var(--mono); font-size:.63rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); font-weight:400}
+.step__g p{color:var(--ink-2); font-size:.86rem}
+.step--risk .step__g p.risk{color:var(--warn)}
+
+/* ---------- footer ---------- */
+.foot{border-top:1px solid var(--rule); background:var(--surface); margin-top:2rem}
+.foot__in{max-width:78rem; margin:0 auto; padding:2.25rem 1.5rem 3rem; display:flex; flex-wrap:wrap; gap:1.25rem 2.5rem; justify-content:space-between; align-items:baseline; font-size:.82rem; color:var(--muted)}
+.foot strong{font-family:var(--serif); font-size:1rem; color:var(--ink); font-weight:700}
+
+@media (max-width:64rem){
+  .shell{grid-template-columns:minmax(0,1fr); gap:0}
+  .toc{position:static; padding:2rem 0 0; border-bottom:1px solid var(--rule); padding-bottom:1.5rem}
+  .toc ol{flex-direction:row; flex-wrap:wrap; gap:.3rem 1.1rem}
+  main{padding-top:2.5rem; gap:3.5rem}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+</style>
+
+<header class="mast">
+  <div class="mast__in">
+    <p class="mast__eyebrow">Product Requirements Document</p>
+    <h1 class="mast__title">갤러리 <em>K</em></h1>
+    <p class="mast__sub">매일 아침, 큐레이터가 고른 12점의 그림으로 열리는 초대제 모바일 갤러리.</p>
+    <dl class="meta">
+      <div><dt>Version</dt><dd>v1.0 · Draft</dd></div>
+      <div><dt>작성일</dt><dd>2026. 08. 27.</dd></div>
+      <div><dt>작성자</dt><dd>큐레이터 K</dd></div>
+      <div><dt>근거 자료</dt><dd>서비스 흐름 및 화면.pdf</dd></div>
+      <div><dt>대상 규모</dt><dd>가족·지인 30–100명</dd></div>
+    </dl>
+  </div>
+</header>
+
+<div class="shell">
+<nav class="toc" aria-label="목차">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#s1"><span class="n">01</span>제품 개요</a></li>
+    <li><a href="#s2"><span class="n">02</span>타겟과 문제</a></li>
+    <li><a href="#s3"><span class="n">03</span>목표와 지표</a></li>
+    <li><a href="#s4"><span class="n">04</span>해결 방법</a></li>
+    <li><a href="#s5"><span class="n">05</span>고객 여정</a></li>
+    <li><a href="#s6"><span class="n">06</span>화면 명세</a></li>
+    <li><a href="#s7"><span class="n">07</span>데이터 모델</a></li>
+    <li><a href="#s8"><span class="n">08</span>비기능 요구</a></li>
+    <li><a href="#s9"><span class="n">09</span>기술 구성</a></li>
+    <li><a href="#s10"><span class="n">10</span>릴리스 계획</a></li>
+    <li><a href="#s11"><span class="n">11</span>열린 질문</a></li>
+    <li><a href="#sa"><span class="n">A</span>변경 요약</a></li>
+  </ol>
+</nav>
+
+<main>
+<section id="s1">
+  <div class="sec-head"><span class="n">01</span><h2>제품 개요</h2></div>
+  <p class="lede">갤러리 K는 모바일 우선 웹앱이다. 비영리·비상업·폐쇄형으로 운영하며, 초대받은 가족과 지인만 입장한다. 운영자는 큐레이터 1인이다.</p>
+
+  <h3>제품 원칙</h3>
+  <p>아래 다섯 가지는 이후 모든 기능 결정의 판단 기준이다.</p>
+  <div class="tw"><table>
+    <thead><tr><th>#</th><th>원칙</th><th>의미</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><strong>하루에 하나의 전시</strong></td><td class="wrap">무한 스크롤도, 추천 알고리즘도 없다. 끝이 있는 경험을 준다.</td></tr>
+      <tr><td>2</td><td><strong>고르게 하지 않는다</strong></td><td class="wrap">무엇을 볼지 선택하는 부담을 큐레이터가 대신 진다.</td></tr>
+      <tr><td>3</td><td><strong>세 번의 탭 안에</strong></td><td class="wrap">앱을 열고 첫 그림을 보기까지 최대 3번의 탭.</td></tr>
+      <tr><td>4</td><td><strong>그림이 주인공</strong></td><td class="wrap">UI는 액자다. 액자가 그림보다 눈에 띄면 실패다.</td></tr>
+      <tr><td>5</td><td><strong>운영이 지속 가능할 것</strong></td><td class="wrap">큐레이터 1인이 하루 30분으로 굴릴 수 있어야 한다.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="s2">
+  <div class="sec-head"><span class="n">02</span><h2>타겟과 문제</h2></div>
+
+  <h3>관람자 — 초대받은 가족·지인</h3>
+  <div class="cards">
+    <article class="card">
+      <span class="card__id">P1</span>
+      <h4 class="card__name">출근길 5분 · 김정민 (44)</h4>
+      <p>지하철에서 스마트폰을 보는 20분. 뉴스는 피로하고 SNS는 소모적이다.</p>
+      <dl>
+        <div><dt>원하는 것</dt><dd>짧고, 기분이 나아지고, 매일 새로울 것</dd></div>
+        <div><dt>두려운 것</dt><dd>또 하나의 '해야 할 일'이 늘어나는 것</dd></div>
+        <div><dt>설계 함의</dt><dd>60초 안에 가치를 줄 것. 밀린 것을 따라잡으라 요구하지 않을 것</dd></div>
+      </dl>
+    </article>
+    <article class="card">
+      <span class="card__id">P2</span>
+      <h4 class="card__name">아침의 습관 · 박영선 (68)</h4>
+      <p>스마트폰 사용은 카카오톡, 유튜브, 사진 정도. 작은 글씨와 여러 단계 메뉴에 약하다.</p>
+      <dl>
+        <div><dt>원하는 것</dt><dd>매일 같은 자리에 있는 것, 실수해도 되돌아올 수 있는 것</dd></div>
+        <div><dt>두려운 것</dt><dd>잘못 눌러 뭔가 사라지는 것, 모르는 사이 돈이 나가는 것</dd></div>
+        <div><dt>설계 함의</dt><dd>큰 글씨, 넓은 터치 영역, 모든 화면에 되돌아가기. 파괴적 동작 없음</dd></div>
+      </dl>
+    </article>
+    <article class="card">
+      <span class="card__id">P3</span>
+      <h4 class="card__name">더 알고 싶은 사람 · 이하늘 (29)</h4>
+      <p>전시를 좋아하지만 실제로는 1년에 두세 번 간다.</p>
+      <dl>
+        <div><dt>원하는 것</dt><dd>그림의 맥락, 작가 이름을 자연스럽게 기억하게 되는 경험</dd></div>
+        <div><dt>두려운 것</dt><dd>설명이 위키 복붙처럼 얕거나, 반대로 학술적이라 안 읽히는 것</dd></div>
+        <div><dt>설계 함의</dt><dd>짧되 '한 가지 볼거리'를 짚어줄 것. 원본 확대 지원</dd></div>
+      </dl>
+    </article>
+    <article class="card">
+      <span class="card__id">Secondary</span>
+      <h4 class="card__name">큐레이터 K · 관리자</h4>
+      <p>매일의 전시를 기획·집필·업로드하는 유일한 운영자.</p>
+      <dl>
+        <div><dt>원하는 것</dt><dd>여러 날치를 미리 준비하기, 빠뜨린 날을 한눈에 보기, 반응 확인하기</dd></div>
+        <div><dt>두려운 것</dt><dd>하루라도 빠지면 신뢰가 깨지는 것. 부담이 되어 스스로 그만두는 것</dd></div>
+        <div><dt>설계 함의</dt><dd>관리자 화면의 1순위 정보는 <strong>어느 날이 비어 있는가</strong>다</dd></div>
+      </dl>
+    </article>
+  </div>
+
+  <h3>해결하려는 문제</h3>
+  <div class="tw"><table>
+    <thead><tr><th>#</th><th>문제</th><th>지금 벌어지는 일</th><th>이 제품이 바꾸는 것</th></tr></thead>
+    <tbody>
+      <tr><td><strong>PB-1</strong></td><td class="wrap"><strong>접근 비용</strong><br>그림을 보려면 미술관에 가야 하고 시간·이동·비용이 든다</td><td class="wrap">1년에 몇 번, 특별한 날에만</td><td class="wrap">매일 아침, 손 안에서</td></tr>
+      <tr><td><strong>PB-2</strong></td><td class="wrap"><strong>탐색 비용</strong><br>온라인에 그림은 많지만 무엇을 볼지 고르는 일 자체가 노동이다</td><td class="wrap">검색하다 지쳐 결국 안 봄</td><td class="wrap">고르는 일을 큐레이터가 대신함</td></tr>
+      <tr><td><strong>PB-3</strong></td><td class="wrap"><strong>감상의 편식</strong><br>아는 작가, 유명한 그림만 반복해서 본다</td><td class="wrap">모네·고흐·클림트에서 멈춤</td><td class="wrap">매일 다른 테마·작가·화풍 12점</td></tr>
+      <tr><td><strong>PB-4</strong></td><td class="wrap"><strong>맥락의 부재</strong><br>그림을 봐도 무엇을 보고 있는지 모른다</td><td class="wrap">"예쁘다"에서 끝남</td><td class="wrap">제목·작가·연도·설명을 함께</td></tr>
+      <tr><td><strong>PB-5</strong></td><td class="wrap"><strong>지속성의 부재</strong><br>좋다고 느껴도 습관이 되지 않는다</td><td class="wrap">한 번 보고 잊음</td><td class="wrap">매일 같은 시각, 같은 자리에</td></tr>
+    </tbody>
+  </table></div>
+  <div class="note"><strong>PB-5는 원본 기획서에 없던 항목이다.</strong> 앞의 네 문제를 다 풀어도 이것이 남으면 제품은 실패한다. 그래서 <em>매일 아침 알림</em>을 MVP 범위에 포함했다 (§6.12).</div>
+
+  <h3>왜 폐쇄형인가</h3>
+  <ul>
+    <li><strong>소셜 압박이 없다.</strong> 좋아요 수, 팔로워, 남의 감상과 비교할 일이 없다. 순수하게 보는 경험만 남는다.</li>
+    <li><strong>신뢰 관계가 큐레이션의 근거다.</strong> "K가 골랐으니까"가 추천 알고리즘을 대신한다. 공개 서비스가 흉내낼 수 없는 이 제품만의 자산이다.</li>
+    <li><strong>비공개·비상업 범위</strong>이므로 이미지 이용의 실무 리스크가 낮다. 다만 무위험은 아니다 — §9.4 RISK-3 참조.</li>
+  </ul>
+
+  <h3>Non-goals</h3>
+  <p>나중에 논의하자는 뜻이 아니라, v1 설계에서 <strong>고려조차 하지 않는다</strong>는 뜻이다.</p>
+  <ul>
+    <li>과금 · 광고 · 결제</li>
+    <li>공개 배포 · 앱스토어 등록 · 검색엔진 노출</li>
+    <li>댓글 · 좋아요 · 공유 · 팔로우 등 소셜 기능</li>
+    <li>추천 알고리즘 · 개인화 피드</li>
+    <li>다국어 (한국어 전용) · 다중 큐레이터 · 세분화된 권한 체계</li>
+  </ul>
+</section>
+
+<section id="s3">
+  <div class="sec-head"><span class="n">03</span><h2>목표와 성공 지표</h2></div>
+
+  <div class="tw"><table>
+    <thead><tr><th>ID</th><th>제품 목표</th><th>대응 문제</th></tr></thead>
+    <tbody>
+      <tr><td><strong>G1</strong></td><td class="wrap">관람자가 <strong>매일 아침 그림을 보는 습관</strong>을 갖게 한다</td><td>PB-1, PB-5</td></tr>
+      <tr><td><strong>G2</strong></td><td class="wrap">관람자가 <strong>몰랐던 작가·화풍</strong>을 만나고, 그것을 기억하게 한다</td><td>PB-2, PB-3, PB-4</td></tr>
+      <tr><td><strong>G3</strong></td><td class="wrap">큐레이터가 <strong>부담 없이 오래</strong> 운영할 수 있게 한다</td><td>운영 지속성</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>North Star Metric</h3>
+  <p class="pull">한 주에 3일 이상 갤러리에 입장한 회원 수 ÷ 전체 회원 수 &nbsp;≥&nbsp; <strong>60%</strong></p>
+  <p>상업 서비스가 아니므로 규모(MAU, 매출)가 아닌 <strong>참여의 깊이</strong>로 측정한다.</p>
+
+  <div class="tw tw--num"><table>
+    <thead><tr><th>보조 지표</th><th>정의</th><th>목표</th><th>목표 연결</th></tr></thead>
+    <tbody>
+      <tr><td>일 감상 그림 수</td><td class="wrap">입장 세션당 연 그림 화면(C-2) 수</td><td>≥ 6 / 12</td><td>G2</td></tr>
+      <tr><td>전시 테마 열람률</td><td class="wrap">입장 세션 중 C-1을 연 비율</td><td>≥ 40%</td><td>G2</td></tr>
+      <tr><td>완주율</td><td class="wrap">12점을 모두 연 세션 비율</td><td>≥ 25%</td><td>G2</td></tr>
+      <tr><td>D+7 재방문율</td><td class="wrap">가입 7일 뒤에도 입장하는 회원 비율</td><td>≥ 70%</td><td>G1</td></tr>
+      <tr><td>알림 → 입장 전환율</td><td class="wrap">아침 알림 발송 후 2시간 내 입장 비율</td><td>≥ 35%</td><td>G1</td></tr>
+      <tr><td><strong>발행 빈도</strong></td><td class="wrap">최근 30일 중 새 전시가 발행된 날 수</td><td>≥ 20일</td><td>G3</td></tr>
+      <tr><td><strong>최장 연장 기간</strong></td><td class="wrap">한 전시가 연속으로 걸려 있던 최대 일수</td><td>≤ 3일</td><td>G1</td></tr>
+      <tr><td><strong>사전 준비 리드타임</strong></td><td class="wrap">오늘 기준 며칠 뒤까지 발행 준비가 되어 있나</td><td>≥ 3일</td><td>G3</td></tr>
+    </tbody>
+  </table></div>
+  <div class="note">마지막 세 지표는 <strong>큐레이터 지표</strong>다. G3가 무너지면 나머지 지표는 측정할 대상 자체가 사라지므로, 관람자 지표와 동등한 비중으로 본다.<br><br><strong>'발행 준수율'을 '발행 빈도'로 바꾼 이유</strong> — 연장 규칙(§4.3)에서 미발행일은 실패가 아니라 정상 동작이다. 100%를 목표로 두면 하루 거를 때마다 지표가 실패로 기록되고, 그 압박이 곧 RISK-1이다. 대신 <strong>30일 중 20일</strong>이라는 현실적인 리듬을 목표로 삼고, 관람자 쪽에서는 <strong>한 전시가 3일을 넘겨 걸리지 않는 것</strong>만 지킨다.</div>
+
+  <h3>지표를 보지 않는 방식</h3>
+  <p>관람자에게는 어떤 지표도 노출하지 않는다. 연속 출석일, 감상한 그림 수, 랭킹 같은 게임화 장치는 제품 원칙 4와 충돌하므로 v1에서 배제한다.</p>
+</section>
+
+<section id="s4">
+  <div class="sec-head"><span class="n">04</span><h2>해결 방법</h2></div>
+
+  <h3>핵심 경험</h3>
+  <p class="pull">아침에 알림이 온다 → 앱을 연다 → 오늘의 전시 제목과 12점의 썸네일이 보인다 → 마음에 드는 것을 누른다 → 그림과 설명을 읽는다 → 다음으로 넘긴다 → <strong>끝난다</strong></p>
+  <p><strong>60초 안에 최소 1점, 5분 안에 12점</strong>을 볼 수 있어야 한다. '끝난다'는 것이 이 제품의 핵심 가치다.</p>
+
+  <h3>화면 지도</h3>
+  <figure>
+    <pre class="mermaid">
+flowchart TD
+    A["A. 첫 화면"] -->|갤러리 입장| CHK{"로그인 상태?"}
+    A -->|Curator K · 관리자만| B["B. 관리자 홈"]
+    A -->|회원가입| D["D. 회원가입"]
+    CHK -->|로그인됨| C["C. 갤러리"]
+    CHK -->|미로그인| A1["A-1. 로그인"]
+    A1 -->|비밀번호 찾기| A2["A-2. 비밀번호 재설정"]
+    A1 --> C
+    D --> C
+    C -->|전시 테마| C1["C-1. 전시 테마"]
+    C -->|썸네일| C2["C-2. 그림"]
+    C -->|지난 전시| C3["C-3. 아카이브"]
+    B -->|관람 현황| B1["B-1. 관람 현황"]
+    B -->|UP| B2["B-2. 업로드"]
+    B1 --> B11["B-1-1. 사용자별 감상"]
+    B2 --> B21["B-2-1. 전시 테마 입력"]
+    B2 --> B22["B-2-2. 그림 업로드"]
+    </pre>
+    <figcaption>A-1 · A-2 · C-3 · B-1-1 · B-2-1 · B-2-2 는 이 PRD에서 새로 정의한 화면</figcaption>
+  </figure>
+
+  <h3 id="rule">전시 발행 및 연장 규칙 <span class="tag tag--new">신규</span> <span class="tag tag--gap">GAP-17</span></h3>
+  <p>이 제품의 시간 축은 두 개다. 둘을 분리하는 것이 이 절의 전부다.</p>
+  <div class="tw"><table>
+    <thead><tr><th>용어</th><th>정의</th></tr></thead>
+    <tbody>
+      <tr><td><strong>발행일</strong><br><code>exhibition date</code></td><td class="wrap">큐레이터가 그 전시를 건 날짜. 전시에 영구히 귀속된다</td></tr>
+      <tr><td><strong>관람일</strong><br><code>viewing date</code></td><td class="wrap">관람자가 보고 있는 오늘</td></tr>
+      <tr><td><strong>연장</strong><br><code>carry-over</code></td><td class="wrap">발행일 &lt; 관람일인 상태. 오늘 새 전시가 없어 직전 전시가 그대로 걸려 있다</td></tr>
+    </tbody>
+  </table></div>
+
+  <h4>규칙 1 — 관람자는 언제나 '가장 최근에 발행된 전시'를 본다</h4>
+  <div class="tw"><pre class="sql"><code>SELECT * FROM exhibition
+WHERE is_published = true AND date &lt;= TODAY
+ORDER BY date DESC
+LIMIT 1</code></pre></div>
+  <p>관람자 화면에 '빈 날'은 존재하지 않는다. 큐레이터가 올리지 못한 날에는 <strong>직전 전시가 자동으로 연장</strong>된다. 별도의 연장 처리도, 관리자의 조작도 필요 없다 — 위 한 줄의 질의가 스킵과 연장을 모두 표현한다.</p>
+
+  <h4>규칙 2 — 올리지 못한 날은 스킵된다. 밀리지 않는다</h4>
+  <p>미발행일은 그대로 지나간다. 8월 31일을 올리지 못했다고 해서 9월 1일에 '8월 31일 전시'를 올리는 일은 없다. <strong>다음 발행은 언제나 그날 날짜로 한다.</strong> 연속으로 며칠을 못 올려도 마찬가지다.</p>
+
+  <h4>규칙 3 — 알림은 새 전시가 발행된 날에만</h4>
+  <p>연장된 날에는 알림을 보내지 않는다. 어제 본 것과 같은 전시로 다시 부르지 않기 위해서다 (§6.12).</p>
+
+  <h4>동작 예시</h4>
+  <p>큐레이터가 8/29, 8/30, 9/01, 9/03, 9/06에 올린 경우:</p>
+  <div class="tw tw--num"><table>
+    <thead><tr><th>관람일</th><th>큐레이터</th><th>발행 상태</th><th>관람자가 보는 전시</th><th>아침 알림</th></tr></thead>
+    <tbody>
+      <tr><td>08.29 토</td><td>업로드</td><td><span class="tag tag--ok">발행</span></td><td>08.29 전시</td><td>발송</td></tr>
+      <tr><td>08.30 일</td><td>업로드</td><td><span class="tag tag--ok">발행</span></td><td>08.30 전시</td><td>발송</td></tr>
+      <tr><td>08.31 월</td><td>—</td><td><span class="tag tag--carry">연장</span></td><td><strong>08.30 전시</strong></td><td>—</td></tr>
+      <tr><td>09.01 화</td><td>업로드</td><td><span class="tag tag--ok">발행</span></td><td>09.01 전시</td><td>발송</td></tr>
+      <tr><td>09.02 수</td><td>—</td><td><span class="tag tag--carry">연장</span></td><td><strong>09.01 전시</strong></td><td>—</td></tr>
+      <tr><td>09.03 목</td><td>업로드</td><td><span class="tag tag--ok">발행</span></td><td>09.03 전시</td><td>발송</td></tr>
+      <tr><td>09.04 금</td><td>—</td><td><span class="tag tag--carry">연장</span></td><td><strong>09.03 전시</strong></td><td>—</td></tr>
+      <tr><td>09.05 토</td><td>—</td><td><span class="tag tag--carry">연장 2일째</span></td><td><strong>09.03 전시</strong></td><td>큐레이터에게 알림</td></tr>
+      <tr><td>09.06 일</td><td>업로드</td><td><span class="tag tag--ok">발행</span></td><td>09.06 전시</td><td>발송</td></tr>
+    </tbody>
+  </table></div>
+
+  <h4>관람자에게 이 사실을 어떻게 드러내는가</h4>
+  <p>숨기지도, 사과하지도 않는다. C 화면 상단에 <strong>관람일(오늘 날짜)을 그대로</strong> 두고 <em>(원본 사양 유지)</em>, 전시 제목 아래에 <strong>발행일을 작게 병기</strong>한다.</p>
+  <div class="mock">
+    <span class="mock__date">2026. 08. 31. 월</span>
+    <span class="mock__title">빛을 등진 사람들</span>
+    <span class="mock__from">8월 30일의 전시</span>
+  </div>
+  <p>어제 본 사람은 같은 전시임을 알아채고, 처음 온 사람은 그냥 오늘의 전시로 받아들인다. <em>오늘의 전시는 준비 중입니다</em> 같은 사과 문구를 두지 않는다 — <strong>관람자에게는 아무 문제도 일어나지 않았기 때문이다.</strong></p>
+
+  <h4>백필(과거 날짜 신규 발행)은 막는다</h4>
+  <p>이미 지나간 미발행일에 전시를 새로 올리는 것은 허용하지 않는다. 아무도 그날 그 전시를 본 적이 없는데 아카이브에만 나중에 나타나면, 목록의 시간 순서가 관람자의 기억과 어긋난다. <strong>이미 발행된 전시의 내용 수정은 계속 허용</strong>한다 (§6.9).</p>
+  <div class="note">이 결정은 되돌릴 수 있다. 백필을 허용하기로 한다면 아카이브 정렬을 발행일이 아닌 <strong>작성 시각</strong> 기준으로 바꾸면 된다.</div>
+
+  <h3>원본 흐름도에서 확장한 지점</h3>
+  <p>업로드된 흐름도의 8개 화면을 실제 동작하는 서비스로 만들기 위해, 반드시 채워야 하는 공백을 아래와 같이 식별하고 결정했다.</p>
+  <div class="tw"><table>
+    <thead><tr><th>#</th><th>원본의 공백</th><th>이 PRD의 결정</th><th>참조</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag tag--gap">GAP-1</span></td><td class="wrap">로그인이 A 화면 안에 문장으로만 암시됨</td><td class="wrap"><strong>A-1 로그인</strong>을 독립 화면으로 분리</td><td>§6.2</td></tr>
+      <tr><td><span class="tag tag--gap">GAP-2</span></td><td class="wrap">비밀번호를 잊었을 때의 경로 없음</td><td class="wrap"><strong>A-2 비밀번호 재설정</strong> (SMS 인증) 추가</td><td>§6.3</td></tr>
+      <tr><td><span class="tag tag--gap">GAP-3</span></td><td class="wrap">'폐쇄형'이라 했으나 가입을 통제할 수단이 없음</td><td class="wrap"><strong>URL 자체가 초대장.</strong> 코드 대신 가입 잠금 + 사후 차단</td><td>§6.4</td></tr>
+      <tr><td><span class="tag tag--gap">GAP-4</span></td><td class="wrap">오늘 전시가 아직 발행되지 않은 경우의 화면 정의 없음</td><td class="wrap"><strong>직전 전시를 자동 연장.</strong> 관람자에게 빈 날은 존재하지 않는다</td><td>§4.3</td></tr>
+      <tr><td><span class="tag tag--gap">GAP-5</span></td><td class="wrap">지난 전시를 볼 방법이 없음 — 하루 놓치면 영원히 못 봄</td><td class="wrap"><strong>C-3 지난 전시 아카이브</strong> 추가 (최근 30일)</td><td>§6.8</td></tr>
+      <tr><td><span class="tag tag--gap">GAP-6</span></td><td class="wrap">12점 중 일부만 올라간 부분 상태의 노출 정책 없음</td><td class="wrap"><strong>12점 전부 + 테마</strong>가 채워져야 발행. 부분 상태는 미노출</td><td>§6.5</td></tr>
+      <tr><td><span class="tag tag--gap">GAP-7</span></td><td class="wrap">관리자 목록이 당일~미래 6일뿐. 과거 전시 수정 경로 없음</td><td class="wrap">B 화면에 <strong>과거 날짜 스크롤</strong> 허용, 수정 가능</td><td>§6.9</td></tr>
+      <tr><td><span class="tag tag--gap">GAP-8</span></td><td class="wrap">매일 열게 만드는 장치가 전혀 없음</td><td class="wrap"><strong>매일 아침 알림</strong> — MVP 범위</td><td>§6.12</td></tr>
+      <tr><td><span class="tag tag--gap">GAP-9</span></td><td class="wrap">이미지 최적화 정책 없음. 12장 고해상도는 데이터 부담</td><td class="wrap">썸네일 / 디스플레이 / 원본 <strong>3단 리사이즈</strong></td><td>§8.2</td></tr>
+      <tr><td><span class="tag tag--gap">GAP-10</span></td><td class="wrap">그림 설명 50자 제한이 지나치게 짧음 (한 문장도 어려움)</td><td class="wrap">설명 <strong>300자</strong>로 확대, 40자 이상 권장</td><td>§7.2</td></tr>
+      <tr><td><span class="tag tag--gap">GAP-11</span></td><td class="wrap">'갤러리 입장 회수'의 정의가 모호</td><td class="wrap"><strong>입장 = 하루 1회 카운트(UV)</strong>. 그림 열람 수는 별도</td><td>§7.2</td></tr>
+      <tr><td><span class="tag tag--gap">GAP-12</span></td><td class="wrap">작품 출처·소장처 필드 없음</td><td class="wrap">Artwork에 <strong>소장처 / 출처 URL</strong> 선택 필드 추가</td><td>§7.2</td></tr>
+      <tr><td><span class="tag tag--gap">GAP-13</span></td><td class="wrap">시니어 사용자(P2) 대응 없음</td><td class="wrap"><strong>큰 글씨 모드</strong>, 본문 최소 17px, 터치 영역 48px</td><td>§8.3</td></tr>
+      <tr><td><span class="tag tag--gap">GAP-14</span></td><td class="wrap">세션 유지 정책 없음</td><td class="wrap"><strong>90일 자동 로그인.</strong> 매번 로그인시키지 않는다</td><td>§6.2</td></tr>
+      <tr><td><span class="tag tag--gap">GAP-15</span></td><td class="wrap">원본 B-2 주석 오탈자 — "되지 않은 경우 Y 표시"</td><td class="wrap"><span class="tag tag--warn">N</span> 표시로 정정</td><td>§6.10</td></tr>
+      <tr><td><span class="tag tag--gap">GAP-16</span></td><td class="wrap">B는 7일치 목록, B-1은 7일/10일이 혼재</td><td class="wrap">모두 <strong>최근 7일</strong>로 통일, 사용자 상세만 30일</td><td>§6.9</td></tr>
+      <tr><td><span class="tag tag--gap">GAP-17</span></td><td class="wrap">큐레이터가 하루 못 올렸을 때의 처리 규칙이 없음</td><td class="wrap"><strong>미발행일은 스킵.</strong> 직전 전시를 연장하고 백필은 막는다</td><td>§4.3</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>기능 범위</h3>
+  <div class="tw"><table>
+    <thead><tr><th>기능</th><th class="c">MVP</th><th class="c">v1.1</th><th class="c">v1.2</th></tr></thead>
+    <tbody>
+      <tr><td class="wrap">URL 기반 회원가입 + 가입 잠금</td><td class="c"><span class="dot"></span></td><td></td><td></td></tr>
+      <tr><td class="wrap">전화번호 + 비밀번호 로그인 / 90일 세션</td><td class="c"><span class="dot"></span></td><td></td><td></td></tr>
+      <tr><td class="wrap">오늘의 전시 — 12점 그리드 + 테마</td><td class="c"><span class="dot"></span></td><td></td><td></td></tr>
+      <tr><td class="wrap">미발행일 자동 연장 — 전시 스킵 규칙</td><td class="c"><span class="dot"></span></td><td></td><td></td></tr>
+      <tr><td class="wrap">그림 상세 — 제목·작가·연도·설명·확대</td><td class="c"><span class="dot"></span></td><td></td><td></td></tr>
+      <tr><td class="wrap">관리자 — 날짜 목록 및 발행 상태</td><td class="c"><span class="dot"></span></td><td></td><td></td></tr>
+      <tr><td class="wrap">관리자 — 전시 테마 및 그림 업로드</td><td class="c"><span class="dot"></span></td><td></td><td></td></tr>
+      <tr><td class="wrap">매일 아침 알림</td><td class="c"><span class="dot"></span></td><td></td><td></td></tr>
+      <tr><td class="wrap">지난 전시 아카이브 (30일)</td><td class="c"><span class="dot"></span></td><td></td><td></td></tr>
+      <tr><td class="wrap">관람 현황 대시보드</td><td></td><td class="c"><span class="dot"></span></td><td></td></tr>
+      <tr><td class="wrap">사용자별 감상 상세 조회</td><td></td><td class="c"><span class="dot"></span></td><td></td></tr>
+      <tr><td class="wrap">비밀번호 재설정 (SMS)</td><td></td><td class="c"><span class="dot"></span></td><td></td></tr>
+      <tr><td class="wrap">큰 글씨 모드</td><td></td><td class="c"><span class="dot"></span></td><td></td></tr>
+      <tr><td class="wrap">카카오 로그인 연동</td><td></td><td></td><td class="c"><span class="dot"></span></td></tr>
+      <tr><td class="wrap">예약 발행 (지정 시각 자동 공개)</td><td></td><td></td><td class="c"><span class="dot"></span></td></tr>
+      <tr><td class="wrap">작가별 · 테마별 다시 보기</td><td></td><td></td><td class="c"><span class="dot"></span></td></tr>
+    </tbody>
+  </table></div>
+  <div class="note"><strong>알림과 아카이브를 MVP에 넣은 이유</strong> — 알림 없이는 G1(습관)이 성립하지 않고, 아카이브 없이는 하루 놓친 사용자가 그대로 이탈한다. 둘 다 '나중에'로 미루면 초기 이탈률을 회복할 수 없다.<br><br><strong>관람 현황을 v1.1로 미룬 이유</strong> — 수십 명 규모에서는 데이터가 쌓이기 전까지 의사결정에 쓰이지 않는다. 로그 <strong>수집은 MVP부터</strong> 하고, 화면만 뒤로 미룬다.</div>
+</section>
+<section id="s5">
+  <div class="sec-head"><span class="n">05</span><h2>고객 여정</h2></div>
+
+  <h3>관람자 여정</h3>
+  <div class="journey">
+    <div class="step"><div class="step__n">01</div><div class="step__b">
+      <div class="step__t">초대 <span>카카오톡 메시지</span></div>
+      <div class="step__g">
+        <div><b>하는 일</b><p>K가 개인적으로 보낸 서비스 URL을 받는다</p></div>
+        <div><b>느끼는 것</b><p>"이게 뭐지? 광고인가?"</p></div>
+        <div><b>이탈 위험</b><p class="risk">링크를 안 누름</p></div>
+        <div><b>제품의 대응</b><p>링크 미리보기에 전시 제목과 대표 이미지 노출. 발신자가 아는 사람이라는 점이 유일한 신뢰 근거</p></div>
+      </div>
+    </div></div>
+    <div class="step"><div class="step__n">02</div><div class="step__b">
+      <div class="step__t">첫 방문 <span>A. 첫 화면</span></div>
+      <div class="step__g">
+        <div><b>하는 일</b><p>미술관 정문 이미지와 오늘 날짜를 본다</p></div>
+        <div><b>느끼는 것</b><p>"조용하고 단정하네"</p></div>
+        <div><b>이탈 위험</b><p class="risk">가입 요구에 부담</p></div>
+        <div><b>제품의 대응</b><p>가입 전에도 <strong>오늘의 전시 제목</strong>을 보여준다. 무엇을 얻는지 먼저 보여주고 가입을 요구한다</p></div>
+      </div>
+    </div></div>
+    <div class="step"><div class="step__n">03</div><div class="step__b">
+      <div class="step__t">가입 <span>D. 회원가입</span></div>
+      <div class="step__g">
+        <div><b>하는 일</b><p>전화번호, 비밀번호, 이름을 입력</p></div>
+        <div><b>느끼는 것</b><p>"정보를 얼마나 달라는 거지?"</p></div>
+        <div><b>이탈 위험</b><p class="risk">입력 항목이 많으면 이탈</p></div>
+        <div><b>제품의 대응</b><p>필수 3개만. 이메일·생년월일·주소 받지 않는다. 소요 시간 60초 목표</p></div>
+      </div>
+    </div></div>
+    <div class="step"><div class="step__n">04</div><div class="step__b">
+      <div class="step__t">첫 감상 <span>C → C-2</span></div>
+      <div class="step__g">
+        <div><b>하는 일</b><p>12개 썸네일 중 하나를 누른다</p></div>
+        <div><b>느끼는 것</b><p>"생각보다 좋다"</p></div>
+        <div><b>이탈 위험</b><p class="risk">로딩이 느리면 이탈</p></div>
+        <div><b>제품의 대응</b><p>썸네일 지연 로딩 + 흐린 플레이스홀더. LCP 2.5초 이내</p></div>
+      </div>
+    </div></div>
+    <div class="step"><div class="step__n">05</div><div class="step__b">
+      <div class="step__t">첫 완주 <span>C-2 스와이프</span></div>
+      <div class="step__g">
+        <div><b>하는 일</b><p>그림 사이를 좌우로 넘긴다</p></div>
+        <div><b>느끼는 것</b><p>"12개면 부담 없네"</p></div>
+        <div><b>이탈 위험</b><p class="risk">매번 목록으로 돌아가야 하면 지침</p></div>
+        <div><b>제품의 대응</b><p>그림 화면에서 <strong>좌우 스와이프로 다음 그림</strong>. 목록으로 돌아갈 필요 없음</p></div>
+      </div>
+    </div></div>
+    <div class="step"><div class="step__n">06</div><div class="step__b">
+      <div class="step__t">재방문 <span>아침 알림</span></div>
+      <div class="step__g">
+        <div><b>하는 일</b><p>알림을 보고 앱을 연다</p></div>
+        <div><b>느끼는 것</b><p>"오늘은 뭘까"</p></div>
+        <div><b>이탈 위험</b><p class="risk">알림이 성가시면 차단</p></div>
+        <div><b>제품의 대응</b><p>하루 1회, 발송 시각 사용자 선택. 알림 문구에 <strong>오늘의 전시 제목</strong>을 담아 궁금하게 만든다</p></div>
+      </div>
+    </div></div>
+    <div class="step"><div class="step__n">07</div><div class="step__b">
+      <div class="step__t">습관화 <span>7일차</span></div>
+      <div class="step__g">
+        <div><b>하는 일</b><p>알림 없이도 스스로 연다</p></div>
+        <div><b>느끼는 것</b><p>"아침에 보는 거"</p></div>
+        <div><b>이탈 위험</b><p class="risk">하루 놓치면 흐름이 끊김</p></div>
+        <div><b>제품의 대응</b><p><strong>밀린 것을 따라잡으라고 하지 않는다.</strong> 아카이브는 조용히 존재할 뿐 강요하지 않는다</p></div>
+      </div>
+    </div></div>
+    <div class="step"><div class="step__n">08</div><div class="step__b">
+      <div class="step__t">이탈 · 복귀 <span>14일 미접속</span></div>
+      <div class="step__g">
+        <div><b>하는 일</b><p>다시 열어본다</p></div>
+        <div><b>느끼는 것</b><p>"오랜만이네, 민망한가?"</p></div>
+        <div><b>이탈 위험</b><p class="risk">죄책감을 주면 영영 이탈</p></div>
+        <div><b>제품의 대응</b><p>연속 출석 카운터를 두지 않는 이유가 여기 있다. 복귀 시에도 화면은 평소와 똑같다</p></div>
+      </div>
+    </div></div>
+  </div>
+
+  <h4>여정의 핵심 전환점</h4>
+  <ul>
+    <li><strong>02 → 03 (가입)</strong> — 가장 큰 이탈 지점. 가입 전 오늘의 전시 제목 노출이 유일한 설득 수단이다.</li>
+    <li><strong>05 → 06 (재방문)</strong> — 알림이 없으면 사실상 여기서 끝난다. GAP-8을 MVP에 넣은 이유.</li>
+    <li><strong>07 → 08 (복귀)</strong> — 게임화된 서비스가 사용자를 잃는 지점. 이 제품은 <strong>의도적으로 아무 압박도 주지 않는다.</strong></li>
+  </ul>
+
+  <h3>시니어 관람자(P2)의 여정 차이</h3>
+  <div class="tw"><table>
+    <thead><tr><th>단계</th><th>일반과 다른 점</th><th>대응</th></tr></thead>
+    <tbody>
+      <tr><td>가입</td><td class="wrap">비밀번호를 만들고 기억하는 것 자체가 장벽</td><td class="wrap">숫자 6자리 허용 검토(v1.2). MVP에서는 <strong>가입을 K가 대신 해주고 계정을 전달</strong>하는 경로를 허용</td></tr>
+      <tr><td>로그인</td><td class="wrap">매번 로그인하면 그때마다 이탈</td><td class="wrap">90일 자동 로그인 (GAP-14). 실질적으로 한 번만 로그인</td></tr>
+      <tr><td>탐색</td><td class="wrap">썸네일 12개 그리드가 작게 느껴짐</td><td class="wrap">큰 글씨 모드에서 그리드를 3열 → <strong>2열</strong>로 전환</td></tr>
+      <tr><td>그림 감상</td><td class="wrap">핀치 줌 제스처를 모를 수 있음</td><td class="wrap">그림 화면에 <strong>명시적인 '크게 보기' 버튼</strong>을 함께 제공</td></tr>
+      <tr><td>되돌아가기</td><td class="wrap">브라우저 뒤로가기를 쓰지 않음</td><td class="wrap">모든 화면 하단에 <strong>텍스트 링크 형태의 명시적 되돌아가기</strong> (원본 흐름도의 '첫 화면으로' 패턴 유지)</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>큐레이터(관리자) 여정</h3>
+  <div class="tw"><table>
+    <thead><tr><th>단계</th><th>시점</th><th>하는 일</th><th>어려운 점</th><th>제품의 대응</th></tr></thead>
+    <tbody>
+      <tr><td><strong>1. 기획</strong></td><td class="wrap">주말, 한 번에</td><td class="wrap">다음 주 7일치 테마를 정하고 그림을 모은다</td><td class="wrap">어느 날이 비었는지 헷갈림</td><td class="wrap">B 화면 3열의 <span class="tag tag--ok">Y</span> <span class="tag tag--warn">N</span> 표시가 이 문제만을 위해 존재한다</td></tr>
+      <tr><td><strong>2. 집필</strong></td><td class="wrap">기획과 함께</td><td class="wrap">전시 제목·테마·그림별 설명을 쓴다</td><td class="wrap">12개 × 설명은 분량이 많음</td><td class="wrap">자동 임시저장. 화면을 벗어나도 입력 내용 보존</td></tr>
+      <tr><td><strong>3. 업로드</strong></td><td class="wrap">날짜별</td><td class="wrap">이미지 12장을 올린다</td><td class="wrap">한 장씩 올리면 지루함</td><td class="wrap"><strong>다중 선택 업로드</strong>. 12칸에 순서대로 채워짐</td></tr>
+      <tr><td><strong>4. 검수</strong></td><td class="wrap">발행 전</td><td class="wrap">관람자에게 어떻게 보일지 확인</td><td class="wrap">실제 화면을 볼 방법이 없음</td><td class="wrap">B-2에 <strong>미리보기</strong> 제공 — 관람자의 C 화면과 동일하게 렌더</td></tr>
+      <tr><td><strong>5. 발행</strong></td><td class="wrap">자정</td><td class="wrap">날짜가 바뀌면 자동 공개</td><td class="wrap">못 올린 날이 생김</td><td class="wrap">12점 + 테마가 다 차면 <strong>자동으로 Y</strong>. 못 올린 날은 <strong>직전 전시가 자동 연장</strong>되므로 관람자 쪽에 빈 날이 생기지 않는다 (§4.3). 연장이 2일 연속되면 알림</td></tr>
+      <tr><td><strong>6. 반응 확인</strong></td><td class="wrap">며칠 뒤</td><td class="wrap">사람들이 봤는지 확인한다</td><td class="wrap">반응이 안 보이면 동기가 떨어짐</td><td class="wrap">B-1 관람 현황 (v1.1). <strong>G3 지속성을 지탱하는 유일한 보상 장치</strong></td></tr>
+    </tbody>
+  </table></div>
+  <div class="note">6단계는 기능적으로는 없어도 서비스가 돌아가지만, <strong>큐레이터가 그만두지 않게 하는 장치</strong>다. 비상업 서비스에서 운영자의 동기는 최우선 리스크다 (§9.4 RISK-1).</div>
+</section>
+<section id="s6">
+  <div class="sec-head"><span class="n">06</span><h2>화면별 기능 명세</h2></div>
+  <p class="lede">각 화면은 목적 · 진입 · 구성 · 기능 · 상태와 예외 · 나가는 길 순으로 기술한다. <span class="tag tag--new">신규</span> 는 원본 흐름도에 없던 화면이다.</p>
+
+  <div class="screen" id="a">
+    <div class="label"><span class="label__code">A</span><h3 class="label__name">첫 화면</h3><p class="label__meta">서비스 URL 접속 시 최초 화면 · 모든 화면의 '첫 화면으로'</p></div>
+    <dl class="spec">
+      <dt>목적</dt><dd>서비스의 인상을 정하고, 회원은 갤러리로 비회원은 가입으로 보낸다.</dd>
+      <dt>나가는 길</dt><dd>C. 갤러리 / A-1. 로그인 / D. 회원가입 / B. 관리자 홈</dd>
+    </dl>
+    <div class="tw"><table>
+      <thead><tr><th>요소</th><th>내용</th><th>비고</th></tr></thead>
+      <tbody>
+        <tr><td>Curator K</td><td class="wrap">우측 상단 텍스트 링크</td><td class="wrap"><strong>관리자에게만 노출.</strong> 원본은 '관리자가 아니면 아무 변화 없음'이었으나, 보이지 않는 것이 낫다</td></tr>
+        <tr><td>날짜</td><td class="wrap"><code>2026. 08. 27. 목</code></td><td class="wrap">접속 시점의 날짜와 요일. KST 기준</td></tr>
+        <tr><td>로고</td><td class="wrap">Morning Gallery K</td><td></td></tr>
+        <tr><td>오늘의 전시 제목</td><td class="wrap">발행된 전시의 제목</td><td class="wrap"><strong>비회원에게도 노출.</strong> 가입 설득의 핵심</td></tr>
+        <tr><td>메인 이미지</td><td class="wrap">미술관 정문 이미지</td><td class="wrap">고정. v1.2에서 오늘의 대표작으로 교체 검토</td></tr>
+        <tr><td>갤러리 입장</td><td class="wrap">기본 버튼</td><td class="wrap">세션 있으면 C, 없으면 A-1</td></tr>
+        <tr><td>회원가입</td><td class="wrap">하단 텍스트 링크</td><td class="wrap">→ D</td></tr>
+      </tbody>
+    </table></div>
+    <div class="note"><strong>상태와 예외</strong> — 오늘 전시가 미발행이면 <strong>연장된 전시의 제목</strong>을 그대로 표시한다 (§4.3). 첫 화면에는 발행일을 병기하지 않는다. 발행 이력이 아예 없는 개관 전에만 <em>첫 전시를 준비하고 있습니다</em>. 네트워크 오류 시에도 정문 이미지와 버튼은 유지하고 전시 제목만 생략한다. <strong>이 화면은 항상 뜬다.</strong> 날짜는 서버 시각(KST)을 신뢰하고 단말 시계를 신뢰하지 않는다.</div>
+  </div>
+
+  <div class="screen" id="a1">
+    <div class="label"><span class="label__code">A-1</span><h3 class="label__name">로그인 <span class="tag tag--new">신규</span> <span class="tag tag--gap">GAP-1</span></h3><p class="label__meta">A에서 '갤러리 입장'을 눌렀고 유효한 세션이 없을 때</p></div>
+    <dl class="spec">
+      <dt>목적</dt><dd>기존 회원을 인증한다.</dd>
+      <dt>구성</dt><dd>전화번호(ID) · 비밀번호 · <strong>입장</strong> 버튼 · '비밀번호를 잊으셨나요?' · '첫 화면으로'</dd>
+      <dt>기능</dt><dd>전화번호는 숫자만 입력받고 자동으로 하이픈을 넣으며, 숫자 키패드를 띄운다(<code>inputmode="numeric"</code>). 로그인 성공 시 <strong>90일 유효 세션</strong>을 발급한다.</dd>
+      <dt>결정</dt><dd>자동 로그인 체크박스를 두지 않고 <strong>기본 동작</strong>으로 삼는다 — 시니어 사용자가 체크박스를 놓치면 매번 로그인해야 하기 때문이다. 로그인 직후 <strong>C. 갤러리로 직행</strong>하며 첫 화면으로 되돌리지 않는다.</dd>
+    </dl>
+    <div class="tw"><table>
+      <thead><tr><th>상태</th><th>처리</th></tr></thead>
+      <tbody>
+        <tr><td>비밀번호 불일치</td><td class="wrap"><em>전화번호 또는 비밀번호가 맞지 않습니다</em> — 어느 쪽이 틀렸는지 알려주지 않는다</td></tr>
+        <tr><td>미가입 번호</td><td class="wrap">동일 문구. 계정 존재 여부를 노출하지 않는다</td></tr>
+        <tr><td>5회 연속 실패</td><td class="wrap">10분간 해당 번호 로그인 차단</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="screen" id="a2">
+    <div class="label"><span class="label__code">A-2</span><h3 class="label__name">비밀번호 재설정 <span class="tag tag--new">신규</span> <span class="tag tag--gap">GAP-2</span></h3><p class="label__meta">A-1의 '비밀번호를 잊으셨나요?' · v1.1</p></div>
+    <dl class="spec">
+      <dt>흐름</dt><dd>전화번호 입력 → SMS 인증번호 6자리 발송 → 인증번호 입력 → 새 비밀번호 설정 → A-1로</dd>
+      <dt>기능</dt><dd>인증번호 유효시간 3분, 재발송은 60초 후부터. 미가입 번호여도 "인증번호를 보냈습니다"로 동일 응답하고 실제 발송은 하지 않는다.</dd>
+      <dt>MVP 대체</dt><dd>MVP 기간에는 <strong>큐레이터가 직접 비밀번호를 초기화</strong>해주는 것으로 대체한다. 수십 명 규모에서 SMS 연동 비용이 정당화되지 않는다.</dd>
+    </dl>
+  </div>
+
+  <div class="screen" id="d">
+    <div class="label"><span class="label__code">D</span><h3 class="label__name">회원가입</h3><p class="label__meta">A 하단의 '회원가입' · 서비스 URL은 큐레이터가 개별 전달</p></div>
+    <dl class="spec">
+      <dt>목적</dt><dd>초대받은 사람만 회원이 되게 한다.</dd>
+      <dt>구성</dt><dd>'갤러리 K'는 · 서비스 취지 본문 · <strong>회원 가입</strong> 버튼 · '첫 화면으로'</dd>
+    </dl>
+    <h4>서비스 취지 — 본문 초안</h4>
+    <p class="pull">갤러리 K는 매일 아침 12점의 그림이 걸리는 작은 미술관입니다.<br>전시는 매일 바뀌고, 하나의 테마로 묶입니다.<br>무엇을 볼지 고르실 필요는 없습니다. 그저 오시면 됩니다.<br>초대받은 분들만 입장하실 수 있고, 광고도 비용도 없습니다.</p>
+    <h4>가입 절차</h4>
+    <ol class="list">
+      <li><strong>필수 정보</strong> — 모바일 전화번호(ID) · 비밀번호 · 이름. <strong>이 셋 외에는 받지 않는다.</strong></li>
+      <li><strong>약관 동의</strong> — 서비스 이용 및 개인정보 처리 동의 1건. 비상업 서비스이므로 항목을 최소화한다.</li>
+      <li><strong>완료</strong> → 자동 로그인 → C. 갤러리로 직행.</li>
+    </ol>
+    <h4>가입 통제 — URL이 곧 초대장 <span class="tag tag--gap">GAP-3</span></h4>
+    <p>서비스 URL은 큐레이터가 아는 사람에게 개별적으로 전달한다. <strong>URL을 아는 것 자체가 초대</strong>이므로 초대 코드를 따로 두지 않는다. 코드는 사전 장벽을 하나 더 세우는데, 그 장벽에 가장 크게 걸리는 사람이 정작 이 서비스의 핵심 대상인 시니어(P2)다.</p>
+    <p>대신 통제를 <strong>사전 차단에서 사후 통제로</strong> 옮긴다.</p>
+    <div class="tw"><table>
+      <thead><tr><th>장치</th><th>동작</th></tr></thead>
+      <tbody>
+        <tr><td><strong>가입 잠금</strong></td><td class="wrap">관리자 화면의 스위치 하나로 신규 가입을 닫는다. 지인들이 다 들어온 뒤에는 잠가둔다</td></tr>
+        <tr><td><strong>가입 알림</strong></td><td class="wrap">누군가 가입하면 큐레이터에게 알림이 간다. 모르는 사람이면 즉시 알 수 있다</td></tr>
+        <tr><td><strong>회원 차단</strong></td><td class="wrap">관리자 화면에서 회원 목록을 보고 개별 차단한다. 차단된 계정은 로그인되지 않는다</td></tr>
+        <tr><td><strong>검색 비노출</strong></td><td class="wrap"><code>noindex</code> + <code>robots.txt</code> 차단. URL이 검색으로 발견되지 않게 한다 (§8.4)</td></tr>
+        <tr><td><strong>추측 불가 URL</strong></td><td class="wrap">도메인 뒤에 짧은 무작위 경로를 붙이는 것을 권장한다</td></tr>
+      </tbody>
+    </table></div>
+    <div class="note"><strong>왜 이 편이 나은가</strong> — 사전 코드는 초대받은 사람 전원에게 마찰을 주고, 정작 URL이 유출되면 무력하다. 사후 통제는 마찰이 0이면서 실제 사고가 났을 때 대응할 수 있다. 수십 명 규모에서는 이쪽이 명백히 유리하다.</div>
+    <div class="note"><strong>카카오 연동에 대한 결정</strong> — 원본 흐름도는 "카카오 연계 회원가입"과 "전화번호(ID)+비번"을 함께 적고 있어 두 방식이 병존한다. 계정 병합 문제를 피하기 위해 <strong>MVP는 전화번호+비밀번호 단일 방식</strong>으로 간다. 카카오 로그인은 v1.2에서 <strong>기존 계정에 연결하는 부가 수단</strong>으로 추가한다.</div>
+    <div class="tw"><table>
+      <thead><tr><th>상태</th><th>처리</th></tr></thead>
+      <tbody>
+        <tr><td>이미 가입된 번호</td><td class="wrap"><em>이미 가입된 번호입니다</em> + A-1 로그인 링크</td></tr>
+        <tr><td>가입이 잠긴 상태</td><td class="wrap"><em>지금은 새로운 회원을 받고 있지 않습니다</em></td></tr>
+        <tr><td>차단된 회원의 로그인</td><td class="wrap">A-1에서 일반 실패와 동일한 문구. 차단 사실을 알려주지 않는다</td></tr>
+        <tr><td>비밀번호 규칙 미달</td><td class="wrap">8자 이상. 실시간 안내하고, 제출 후 통보하지 않는다</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="screen" id="c">
+    <div class="label"><span class="label__code">C</span><h3 class="label__name">갤러리 화면</h3><p class="label__meta">A의 '갤러리 입장', 로그인 직후, 하위 화면의 '갤러리 화면으로'</p></div>
+    <dl class="spec">
+      <dt>목적</dt><dd>오늘의 전시 전체를 한 화면에 보여준다. <strong>이 제품의 중심 화면.</strong></dd>
+      <dt>구성</dt><dd>날짜 <code>2026. 08. 29. 토</code> · 전시 제목 링크(→C-1) · <strong>3열 × 4행 = 12개 썸네일</strong> · '지난 전시'(→C-3) · '첫 화면으로'</dd>
+    </dl>
+    <div class="note">원본 흐름도의 <em>업로드 현황</em> 레이블은 관리자 화면(B-2)의 용어가 관람자 화면에 잘못 넘어온 것으로 보인다. 관람자에게는 노출하지 않는다.</div>
+    <h4>기능 상세</h4>
+    <ul>
+      <li>썸네일은 정사각 크롭. 원본 비율은 C-2에서 보여준다.</li>
+      <li>각 썸네일 하단에 <strong>작가명만</strong> 작게 표기한다. 제목까지 넣으면 그리드가 텍스트로 가득 차 그림이 죽는다 (제품 원칙 4).</li>
+      <li>이미 열어본 그림은 <strong>아주 옅은 표식</strong>으로 구분한다. 어디까지 봤는지 알 수 있되, 안 본 것을 재촉하지 않는다.</li>
+      <li>썸네일은 지연 로딩하고, 로딩 중에는 저해상도 블러 플레이스홀더를 보여준다.</li>
+    </ul>
+    <div class="note"><strong>표시하는 전시 <span class="tag tag--gap">GAP-4</span> <span class="tag tag--gap">GAP-17</span></strong> — 이 화면은 '오늘의 전시'가 아니라 <strong>가장 최근에 발행된 전시</strong>를 연다 (§4.3 규칙 1). 상단 날짜는 오늘 날짜를 그대로 두고, 전시 제목 아래에 발행일을 작게 병기한다.</div>
+    <div class="tw"><table>
+      <thead><tr><th>상태</th><th>화면</th></tr></thead>
+      <tbody>
+        <tr><td><span class="tag tag--ok">오늘 발행됨</span></td><td class="wrap">정상 12점 그리드. 발행일 병기 없음</td></tr>
+        <tr><td><span class="tag tag--carry">연장 중</span></td><td class="wrap">직전 전시의 12점 그리드 + 제목 아래 <em>8월 30일의 전시</em>. <strong>사과 문구도, 빈 그리드도 없다</strong></td></tr>
+        <tr><td><span class="tag tag--carry">부분 업로드</span></td><td class="wrap">발행으로 치지 않는다. 직전 전시가 계속 연장된다 <span class="tag tag--gap">GAP-6</span></td></tr>
+        <tr><td><span class="tag tag--warn">발행 이력 없음</span></td><td class="wrap"><em>첫 전시를 준비하고 있습니다</em>. 서비스 최초 시작 전에만 나타난다</td></tr>
+        <tr><td>네트워크 오류</td><td class="wrap">마지막으로 본 전시를 캐시에서 표시하고 상단에 재시도 안내</td></tr>
+      </tbody>
+    </table></div>
+    <div class="note"><strong>입장 로그 <span class="tag tag--gap">GAP-11</span></strong> — 이 화면 진입 시 <code>ViewLog</code>에 기록한다. 입장 회수는 <strong>관람일 기준 하루 1회만 카운트</strong>한다(UV 기준). 연장 중이어서 같은 전시를 이틀에 걸쳐 봐도 관람일이 다르므로 각각 1회로 센다 — 지표가 재는 것은 '전시를 몇 번 열었나'가 아니라 '며칠이나 들어왔나'이기 때문이다.</div>
+  </div>
+
+  <div class="screen" id="c1">
+    <div class="label"><span class="label__code">C-1</span><h3 class="label__name">전시 테마 화면</h3><p class="label__meta">C 화면의 '전시 테마' 링크</p></div>
+    <dl class="spec">
+      <dt>목적</dt><dd>오늘 12점이 왜 함께 걸렸는지 설명한다.</dd>
+      <dt>구성</dt><dd>날짜 · <strong>전시 제목</strong> · 전시 테마 본문 · '갤러리 화면으로'</dd>
+      <dt>제약</dt><dd>전시 제목 20자 이내, 테마 본문 500자 이내 <em>(원본 사양 유지)</em></dd>
+      <dt>기능</dt><dd>본문은 줄바꿈을 보존한다 — 문단 구분이 읽는 리듬을 만든다. 본문 하단에 <strong>오늘의 작가 목록</strong>(중복 제거)을 조용히 덧붙여, 12점을 다 보지 않아도 오늘의 폭을 가늠하게 한다.</dd>
+    </dl>
+  </div>
+
+  <div class="screen" id="c2">
+    <div class="label"><span class="label__code">C-2</span><h3 class="label__name">그림 화면</h3><p class="label__meta">C 화면의 썸네일, 또는 다른 그림 화면에서 좌우 스와이프</p></div>
+    <dl class="spec">
+      <dt>목적</dt><dd>한 점의 그림을 제대로 보고, 그것에 대해 알게 한다.</dd>
+    </dl>
+    <div class="tw"><table>
+      <thead><tr><th>요소</th><th>내용</th></tr></thead>
+      <tbody>
+        <tr><td>그림 제목</td><td class="wrap">20자 이내</td></tr>
+        <tr><td>작가, 연도</td><td class="wrap"><code>요하네스 페르메이르, 1665년경</code></td></tr>
+        <tr><td>설명</td><td class="wrap">큐레이터가 쓴 작품 설명 — 최대 <strong>300자</strong> <span class="tag tag--gap">GAP-10</span></td></tr>
+        <tr><td>그림</td><td class="wrap">원본 비율 유지. 누르면 전체 화면</td></tr>
+        <tr><td>위치 표시</td><td class="wrap"><code>3 / 12</code></td></tr>
+        <tr><td>갤러리 화면으로</td><td class="wrap">하단 링크</td></tr>
+      </tbody>
+    </table></div>
+    <h4>기능 상세</h4>
+    <ul>
+      <li><strong>좌우 스와이프로 이전·다음 그림</strong>으로 이동한다. 원본 흐름도에는 매번 갤러리로 돌아가는 흐름만 있으나, 그러면 12점을 보는 데 23번의 탭이 필요하다. 스와이프로 12번이 된다.</li>
+      <li>그림을 누르면 <strong>전체 화면 뷰어</strong> — 검은 배경, UI 제거, 핀치 줌·더블탭 확대, 아래로 스와이프하여 닫기.</li>
+      <li>시니어 대응으로 그림 우하단에 <strong>'크게 보기' 버튼</strong>을 함께 둔다.</li>
+      <li>소장처·출처가 입력된 경우 설명 아래 작은 글씨로 표기한다 <span class="tag tag--gap">GAP-12</span>.</li>
+      <li>진입 시 <code>ArtworkViewLog</code>를 기록한다. §3의 '일 감상 그림 수'의 근거 데이터다.</li>
+    </ul>
+    <div class="note"><strong>상태와 예외</strong> — 이미지 로딩 실패 시 제목·작가·설명은 그대로 두고 이미지 영역에만 재시도 버튼을 둔다. <strong>텍스트는 반드시 살린다.</strong></div>
+  </div>
+
+  <div class="screen" id="c3">
+    <div class="label"><span class="label__code">C-3</span><h3 class="label__name">지난 전시 <span class="tag tag--new">신규</span> <span class="tag tag--gap">GAP-5</span></h3><p class="label__meta">C 화면 하단의 '지난 전시'</p></div>
+    <dl class="spec">
+      <dt>목적</dt><dd>놓친 날의 전시를 볼 수 있게 한다. <strong>하루 결석이 곧 이탈이 되지 않게 하는 안전망.</strong></dd>
+      <dt>구성</dt><dd><strong>최근 30개 전시</strong>를 발행일 최신순 목록으로. 각 행은 발행일 · 전시 제목 · 대표 이미지 썸네일 · 감상 여부 표식.</dd>
+    </dl>
+    <ul>
+      <li>목록의 단위는 <strong>날짜가 아니라 전시</strong>다. 발행이 뜸한 시기에도 목록이 비지 않도록 "지난 30일"이 아닌 "최근 30개"로 센다 <span class="tag tag--gap">GAP-17</span>.</li>
+      <li>연장된 날은 별도 행으로 나타나지 않는다. 그 전시는 이미 자기 발행일에 한 번 있기 때문이다.</li>
+      <li>행을 누르면 그 날짜의 C 화면을 연다. 상단에 <em>지난 전시를 보고 있습니다</em> 안내와 오늘로 돌아가는 링크를 둔다.</li>
+      <li>30번째보다 오래된 전시는 조회하지 않는다. v1.2에서 작가별·테마별 다시 보기로 확장.</li>
+      <li><strong>알림이나 배지로 재촉하지 않는다.</strong> 조용히 존재만 한다 (§5 여정 08단계).</li>
+    </ul>
+  </div>
+
+  <div class="screen" id="b">
+    <div class="label"><span class="label__code">B</span><h3 class="label__name">관리자 화면</h3><p class="label__meta">A 첫 화면의 'Curator K' · 관리자 계정만</p></div>
+    <dl class="spec">
+      <dt>목적</dt><dd>어느 날짜가 비어 있는지 한눈에 보여주고, 그 날짜의 업로드로 데려간다.</dd>
+      <dt>구성</dt><dd>상단 '관람 현황'(→B-1) · 3열 날짜 목록 · 하단 '첫 화면으로'</dd>
+    </dl>
+    <div class="tw"><table>
+      <thead><tr><th>열</th><th>내용</th><th>동작</th></tr></thead>
+      <tbody>
+        <tr><td>1열</td><td class="wrap">날짜 <code>2026 08.27</code></td><td>—</td></tr>
+        <tr><td>2열</td><td class="wrap"><code>UP</code> 버튼</td><td class="wrap">→ B-2 해당 날짜 업로드</td></tr>
+        <tr><td>3열</td><td class="wrap"><span class="tag tag--ok">Y</span> / <span class="tag tag--carry">↑</span> / <span class="tag tag--warn">N</span> 발행 상태</td><td class="wrap">세 가지 상태 <span class="tag tag--gap">GAP-15</span> <span class="tag tag--gap">GAP-17</span></td></tr>
+      </tbody>
+    </table></div>
+    <h4>3열의 세 가지 상태 <span class="tag tag--gap">GAP-17</span></h4>
+    <div class="tw"><table>
+      <thead><tr><th>표시</th><th>의미</th><th>나타나는 곳</th></tr></thead>
+      <tbody>
+        <tr><td><span class="tag tag--ok">Y</span></td><td class="wrap">발행됨 — 제목 + 테마 + 그림 12점이 모두 채워짐</td><td>과거·오늘·미래</td></tr>
+        <tr><td><span class="tag tag--carry">↑ 08.30</span></td><td class="wrap"><strong>연장됨</strong> — 올리지 못한 날. 어느 전시가 대신 걸렸는지 함께 표시</td><td>과거만</td></tr>
+        <tr><td><span class="tag tag--warn">N</span></td><td class="wrap">아직 준비되지 않음</td><td>오늘·미래만</td></tr>
+      </tbody>
+    </table></div>
+    <div class="note">과거의 미발행일을 <span class="tag tag--warn">N</span>(실패)이 아니라 <span class="tag tag--carry">↑</span>(연장)으로 표시하는 것은 의도적이다. <strong>스킵은 정상 동작이지 사고가 아니다.</strong> 지난 날짜에 붉은 경고를 남겨두면 큐레이터에게 매일 죄책감을 주게 되고, 그것이 RISK-1(번아웃)로 이어진다.</div>
+    <h4>기능 상세</h4>
+    <ul>
+      <li><strong>맨 위가 항상 오늘</strong>이고 아래로 내려갈수록 미래 날짜다 <em>(원본 사양 유지)</em>. 기본 7일치를 보여준다.</li>
+      <li><strong>위로 스크롤하면 과거 날짜</strong>가 나온다 <span class="tag tag--gap">GAP-7</span>.</li>
+      <li><strong>과거 날짜의 <code>UP</code> 버튼</strong> — 이미 발행된 날(<span class="tag tag--ok">Y</span>)은 <strong>수정만 가능</strong>하다. 연장된 날(<span class="tag tag--carry">↑</span>)은 눌러도 새로 발행할 수 없다. 백필 금지 (§4.3).</li>
+      <li>3열은 색으로도 구분한다 — Y는 초록, N은 주황, ↑는 회색. <strong>스캔 속도가 이 화면의 전부다.</strong></li>
+    </ul>
+  </div>
+
+  <div class="screen" id="b2">
+    <div class="label"><span class="label__code">B-2</span><h3 class="label__name">작품 및 큐레이션 업로드</h3><p class="label__meta">B 화면의 'UP' 버튼 · 큐레이터가 가장 오래 머무는 화면</p></div>
+    <dl class="spec">
+      <dt>구성</dt><dd>날짜 <code>2026. 08. 29. 토</code> · 전시 테마 링크(→B-2-1) · 업로드 현황 12개 버튼 · <strong>미리보기</strong> <span class="tag tag--new">신규</span> · '이전 화면으로'</dd>
+      <dt>B-2-1<br>전시 테마 입력</dt><dd>전시 제목 한글 <strong>20자 이내</strong>, 전시 테마 한글 <strong>500자 이내</strong>. 실시간 글자 수 표시, 자동 임시저장.</dd>
+    </dl>
+    <h4>B-2-2. 그림 업로드 <span class="tag tag--new">신규</span></h4>
+    <div class="tw"><table>
+      <thead><tr><th>항목</th><th>제약</th><th class="c">필수</th></tr></thead>
+      <tbody>
+        <tr><td>이미지 파일</td><td class="wrap">JPG / PNG / WebP, 최대 20MB</td><td class="c"><span class="dot"></span></td></tr>
+        <tr><td>그림 제목</td><td class="wrap">한글 20자 이내</td><td class="c"><span class="dot"></span></td></tr>
+        <tr><td>작가</td><td class="wrap">40자 이내</td><td class="c"><span class="dot"></span></td></tr>
+        <tr><td>작품 연도</td><td class="wrap">자유 텍스트 (<code>1665년경</code> 허용)</td><td class="c"><span class="dot"></span></td></tr>
+        <tr><td>설명</td><td class="wrap"><strong>300자 이내</strong> (40자 이상 권장) <span class="tag tag--gap">GAP-10</span></td><td class="c"><span class="dot"></span></td></tr>
+        <tr><td>소장처</td><td class="wrap">60자 이내 <span class="tag tag--gap">GAP-12</span></td><td class="c">—</td></tr>
+        <tr><td>출처 URL</td><td class="wrap"><span class="tag tag--gap">GAP-12</span></td><td class="c">—</td></tr>
+      </tbody>
+    </table></div>
+    <h4>기능 상세</h4>
+    <ul>
+      <li><strong>다중 선택 업로드</strong> — 여러 장을 한 번에 골라 빈 칸에 순서대로 채운다.</li>
+      <li>업로드 즉시 서버에서 3단 리사이즈 (§8.2).</li>
+      <li>12칸의 <strong>순서를 드래그로 바꿀 수 있다.</strong> 전시의 순서는 큐레이션의 일부다.</li>
+      <li>모든 입력은 <strong>자동 임시저장</strong>한다. 화면을 벗어나도 내용이 남아야 한다.</li>
+      <li>12점 + 테마가 채워지는 순간 해당 날짜가 <strong>자동으로 Y</strong>가 된다. 별도 '발행' 버튼을 두지 않는다.</li>
+    </ul>
+    <div class="note"><strong>상태와 예외</strong> — 업로드 실패 시 해당 칸만 실패 표시하고 나머지 진행은 유지한다. 글자 수 초과는 입력 자체를 막지 않고 초과분을 붉게 표시한 뒤 저장 시 차단한다. 과거 날짜 수정은 허용하며 저장 즉시 관람자 화면에 반영된다.</div>
+  </div>
+
+  <div class="screen" id="b1">
+    <div class="label"><span class="label__code">B-1</span><h3 class="label__name">관람 현황</h3><p class="label__meta">B 관리자 화면의 '관람 현황' · v1.1</p></div>
+    <dl class="spec">
+      <dt>목적</dt><dd>큐레이터에게 "사람들이 보고 있다"를 보여준다. <strong>G3를 지탱하는 장치.</strong></dd>
+      <dt>구성</dt><dd>① 날짜별 입장 현황 — 최근 <strong>7일</strong>의 날짜 · 전시 제목 · 입장 회수 <span class="tag tag--gap">GAP-16</span><br>② 사용자별 감상 현황 — 이름 또는 연락처 입력 후 엔터 → B-1-1<br>③ '첫 화면으로'</dd>
+      <dt>B-1-1<br>사용자별 상세 <span class="tag tag--new">신규</span></dt><dd>해당 사용자의 최근 <strong>30일</strong> 날짜별 · 전시 제목별 입장 여부. 입장한 날은 열어본 그림 수(<code>8 / 12</code>)를 함께 표시한다.</dd>
+      <dt>입장 회수의<br>정의</dt><dd><code>입장 회수 = 그날 C 화면에 진입한 고유 사용자 수</code>. 같은 사람이 여러 번 들어와도 1이다. <span class="tag tag--gap">GAP-11</span></dd>
+    </dl>
+    <div class="note"><strong>개인정보 유의</strong> — 이 화면은 특정 개인의 열람 이력을 조회한다. 지인 대상 서비스라도 회원에게 <strong>가입 시 이 사실을 고지</strong>한다 (§8.4).</div>
+  </div>
+
+  <div class="screen" id="notify">
+    <div class="label"><span class="label__code">알림</span><h3 class="label__name">매일 아침 알림 <span class="tag tag--new">신규</span> <span class="tag tag--gap">GAP-8</span></h3><p class="label__meta">화면이 아닌 기능이지만 MVP 범위 · G1을 성립시키는 유일한 장치</p></div>
+    <div class="tw"><table>
+      <thead><tr><th>항목</th><th>사양</th></tr></thead>
+      <tbody>
+        <tr><td>채널</td><td class="wrap">웹 푸시 (MVP) / 카카오 알림톡 (v1.2 검토)</td></tr>
+        <tr><td>발송 시각</td><td class="wrap">기본 <strong>오전 7:30</strong>, 사용자가 변경 가능</td></tr>
+        <tr><td>빈도</td><td class="wrap"><strong>새 전시가 발행된 날에만 1회</strong> (§4.3 규칙 3)</td></tr>
+        <tr><td>문구</td><td class="wrap"><code>오늘의 전시 · {전시 제목}</code> — 12점이 어떤 그림인지는 알려주지 않는다</td></tr>
+        <tr><td>연장된 날</td><td class="wrap"><strong>발송하지 않는다.</strong> 어제 본 것과 같은 전시로 다시 부르지 않는다</td></tr>
+        <tr><td>발행 이력 없음</td><td class="wrap">발송하지 않는다</td></tr>
+        <tr><td>해제</td><td class="wrap">설정에서 1탭으로 끌 수 있다</td></tr>
+        <tr><td>큐레이터 알림</td><td class="wrap"><strong>연장이 2일 연속</strong>되면 알림 (§4.3 예시의 09.05). 매일 밤 재촉하지 않는 이유는 스킵이 정상 동작이기 때문이다</td></tr>
+      </tbody>
+    </table></div>
+    <div class="note">알림 빈도가 곧 발행 빈도가 된다. 매일 올리면 매일 오고, 주 3회 올리면 주 3회 온다. 관람자는 <strong>알림이 오면 새 전시가 있다</strong>는 것만 알면 된다.</div>
+  </div>
+</section>
+<section id="s7">
+  <div class="sec-head"><span class="n">07</span><h2>데이터 모델</h2></div>
+  <figure>
+    <pre class="mermaid">
+erDiagram
+    USER ||--o{ VIEW_LOG : "입장한다"
+    USER ||--o{ ARTWORK_VIEW_LOG : "감상한다"
+    USER ||--o| INVITATION : "사용한다"
+    EXHIBITION ||--|{ ARTWORK : "12점을 건다"
+    EXHIBITION ||--o{ VIEW_LOG : "기록된다"
+    ARTWORK ||--o{ ARTWORK_VIEW_LOG : "기록된다"
+    </pre>
+  </figure>
+
+  <h3>User — 회원</h3>
+  <div class="tw"><table>
+    <thead><tr><th>필드</th><th>타입</th><th>제약</th><th>비고</th></tr></thead>
+    <tbody>
+      <tr><td><code>id</code></td><td>UUID</td><td>PK</td><td></td></tr>
+      <tr><td><code>phone</code></td><td>str</td><td>UNIQUE, NOT NULL</td><td class="wrap">로그인 ID</td></tr>
+      <tr><td><code>password_hash</code></td><td>str</td><td>NOT NULL</td><td class="wrap">bcrypt</td></tr>
+      <tr><td><code>name</code></td><td>str(20)</td><td>NOT NULL</td><td></td></tr>
+      <tr><td><code>role</code></td><td>enum</td><td><code>viewer</code> | <code>curator</code></td><td class="wrap">기본 <code>viewer</code></td></tr>
+      <tr><td><code>notify_at</code></td><td>time</td><td>NULL 허용</td><td class="wrap">알림 시각. NULL이면 알림 없음</td></tr>
+      <tr><td><code>font_scale</code></td><td>enum</td><td><code>normal</code> | <code>large</code></td><td class="wrap">큰 글씨 모드 <span class="tag tag--gap">GAP-13</span></td></tr>
+      <tr><td><code>is_blocked</code></td><td>bool</td><td>기본 false</td><td class="wrap">차단된 회원은 로그인 불가 (§6.4)</td></tr>
+      <tr><td><code>created_at</code></td><td>datetime</td><td></td><td></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Exhibition — 하루의 전시</h3>
+  <div class="tw"><table>
+    <thead><tr><th>필드</th><th>타입</th><th>제약</th><th>비고</th></tr></thead>
+    <tbody>
+      <tr><td><code>id</code></td><td>UUID</td><td>PK</td><td></td></tr>
+      <tr><td><code>date</code></td><td>date</td><td><strong>UNIQUE</strong>, NOT NULL</td><td class="wrap"><strong>발행일.</strong> 하루에 하나 — 제품 원칙 1</td></tr>
+      <tr><td><code>title</code></td><td>str(20)</td><td></td><td class="wrap">전시 제목</td></tr>
+      <tr><td><code>theme</code></td><td>text(500)</td><td></td><td class="wrap">전시 테마</td></tr>
+      <tr><td><code>is_published</code></td><td>bool</td><td>파생</td><td class="wrap">제목 + 테마 + 12점이면 true <span class="tag tag--gap">GAP-6</span></td></tr>
+      <tr><td><code>published_at</code></td><td>datetime</td><td>NULL 허용</td><td class="wrap">12점이 채워진 시각. 아카이브 정렬 대안용 (§4.3)</td></tr>
+    </tbody>
+  </table></div>
+  <div class="note"><strong>현재 전시 질의</strong> — <code>WHERE is_published AND date &lt;= TODAY ORDER BY date DESC LIMIT 1</code>. <strong><code>(is_published, date DESC)</code> 복합 인덱스를 둔다.</strong> 모든 관람자의 모든 접속이 이 질의를 탄다.</div>
+
+  <h3>Artwork — 그림</h3>
+  <div class="tw"><table>
+    <thead><tr><th>필드</th><th>타입</th><th>제약</th><th>비고</th></tr></thead>
+    <tbody>
+      <tr><td><code>id</code></td><td>UUID</td><td>PK</td><td></td></tr>
+      <tr><td><code>exhibition_id</code></td><td>UUID</td><td>FK</td><td></td></tr>
+      <tr><td><code>position</code></td><td>int</td><td>1–12</td><td class="wrap">전시 내 순서</td></tr>
+      <tr><td><code>title</code></td><td>str(20)</td><td>NOT NULL</td><td></td></tr>
+      <tr><td><code>artist</code></td><td>str(40)</td><td>NOT NULL</td><td></td></tr>
+      <tr><td><code>year_text</code></td><td>str(20)</td><td>NOT NULL</td><td class="wrap"><code>1665년경</code> 등 자유 텍스트</td></tr>
+      <tr><td><code>description</code></td><td>text(<strong>300</strong>)</td><td>NOT NULL</td><td class="wrap">원본 50자 → 300자 <span class="tag tag--gap">GAP-10</span></td></tr>
+      <tr><td><code>collection</code></td><td>str(60)</td><td>NULL 허용</td><td class="wrap">소장처 <span class="tag tag--gap">GAP-12</span></td></tr>
+      <tr><td><code>source_url</code></td><td>str</td><td>NULL 허용</td><td class="wrap">출처 <span class="tag tag--gap">GAP-12</span></td></tr>
+      <tr><td><code>image_thumb</code><br><code>image_display</code><br><code>image_origin</code></td><td>str</td><td></td><td class="wrap">S3 키 3종 (§8.2)</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>로그 및 초대</h3>
+  <div class="tw"><table>
+    <thead><tr><th>모델</th><th>구성</th></tr></thead>
+    <tbody>
+      <tr><td><strong>ViewLog</strong></td><td class="wrap"><code>user_id</code> + <code>viewed_on</code> 복합 UNIQUE — <strong>관람일 기준</strong> 하루 1회 <span class="tag tag--gap">GAP-11</span> · <code>exhibition_id</code> (그날 걸려 있던 전시 — 연장 중이면 과거 전시) · <code>first_entered_at</code></td></tr>
+      <tr><td><strong>ArtworkViewLog</strong></td><td class="wrap"><code>user_id</code> · <code>artwork_id</code> · <code>viewed_at</code> — 같은 그림을 이틀에 걸쳐 보면 중복 제거해서 센다</td></tr>
+      <tr><td><strong>Invitation</strong></td><td class="wrap"><strong>삭제한다.</strong> URL이 초대장이 되면서(GAP-3) 코드 개체가 불필요해졌다. 대신 <code>User.is_blocked</code>와 전역 설정 <code>signup_open</code>을 둔다</td></tr>
+    </tbody>
+  </table></div>
+  <div class="note">원본 설계는 <code>user_id + exhibition_date</code>였다. 연장 규칙(§4.3)이 도입되면서 <strong>관람일과 발행일이 갈라지므로</strong>, UNIQUE 키를 관람일(<code>viewed_on</code>)로 옮기고 어느 전시를 봤는지는 <code>exhibition_id</code>로 따로 기록한다. 이렇게 해야 "8월 30일 전시를 8월 30일과 31일에 각각 봤다"가 2건으로 남는다.</div>
+
+  <h3>데이터 보존</h3>
+  <div class="tw"><table>
+    <thead><tr><th>데이터</th><th>보존</th></tr></thead>
+    <tbody>
+      <tr><td>전시 · 작품</td><td class="wrap">영구</td></tr>
+      <tr><td>입장 · 열람 로그</td><td class="wrap"><strong>180일 후 자동 삭제.</strong> 지표 산출에 그 이상 필요하지 않다</td></tr>
+      <tr><td>탈퇴 회원</td><td class="wrap">즉시 삭제. 로그는 익명화 후 유지</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="s8">
+  <div class="sec-head"><span class="n">08</span><h2>비기능 요구사항</h2></div>
+
+  <h3>성능</h3>
+  <div class="tw tw--num"><table>
+    <thead><tr><th>항목</th><th>목표</th><th>근거</th></tr></thead>
+    <tbody>
+      <tr><td>C 갤러리 화면 LCP</td><td>≤ 2.5초 (4G)</td><td class="wrap">여정 04단계 이탈 방지</td></tr>
+      <tr><td>C-2 그림 표시</td><td>≤ 1.5초</td><td class="wrap">스와이프 리듬 유지</td></tr>
+      <tr><td>하루치 전체 데이터</td><td>≤ 3MB</td><td class="wrap">매일 쓰는 서비스의 데이터 부담</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>이미지 처리 <span class="tag tag--gap">GAP-9</span></h3>
+  <p>업로드 시 서버에서 세 벌을 만든다. 원본 그대로 12장을 내려보내면 한 번 볼 때 수십 MB가 나간다.</p>
+  <div class="tw"><table>
+    <thead><tr><th>용도</th><th>크기</th><th>포맷</th><th>화면</th></tr></thead>
+    <tbody>
+      <tr><td>썸네일</td><td class="wrap">400×400 정사각 크롭</td><td>WebP · q80</td><td>C</td></tr>
+      <tr><td>디스플레이</td><td class="wrap">긴 변 1600px</td><td>WebP · q85</td><td>C-2</td></tr>
+      <tr><td>원본</td><td class="wrap">업로드 그대로</td><td>원본 유지</td><td class="wrap">전체 화면 확대 시에만</td></tr>
+    </tbody>
+  </table></div>
+  <div class="note">원본은 <strong>사용자가 확대를 요청할 때만</strong> 내려받는다.</div>
+
+  <h3>접근성 <span class="tag tag--gap">GAP-13</span></h3>
+  <ul>
+    <li>본문 최소 <strong>17px</strong>, 큰 글씨 모드에서 <strong>20px</strong>.</li>
+    <li>터치 영역 최소 <strong>48 × 48px</strong>.</li>
+    <li>큰 글씨 모드에서 C 화면 그리드를 3열 → <strong>2열</strong>로 전환 (12개는 6행이 된다).</li>
+    <li>명도 대비 WCAG AA (본문 4.5:1) 이상.</li>
+    <li>모든 이미지에 <code>그림 제목 – 작가</code> 대체 텍스트.</li>
+    <li>색만으로 상태를 전달하지 않는다 — Y/N은 문자와 색을 함께 쓴다.</li>
+  </ul>
+
+  <h3>보안 및 개인정보</h3>
+  <ul>
+    <li><strong>URL이 사실상의 접근 통제 수단이므로</strong>(§6.4) 검색 노출 차단이 보안 요구사항이다 — 전 페이지 <code>noindex</code>, <code>robots.txt</code> 전체 차단.</li>
+    <li>서비스 URL은 추측 가능한 형태를 피한다. 도메인 뒤 무작위 경로를 권장한다.</li>
+    <li>수집 항목은 <strong>전화번호 · 비밀번호 · 이름 3개뿐.</strong> 최소 수집이 곧 최소 리스크다.</li>
+    <li>비밀번호는 bcrypt 해시. 평문 저장 · 로그 출력 금지.</li>
+    <li>전 구간 HTTPS. 세션 토큰은 <code>HttpOnly</code> + <code>Secure</code> 쿠키.</li>
+    <li>관리자 화면(B / B-1 / B-2)은 <strong>서버에서 role을 검증</strong>한다. 프론트에서 링크를 숨기는 것은 UI 편의일 뿐 보안이 아니다.</li>
+    <li>이미지 S3 버킷은 <strong>비공개</strong>. CloudFront 서명 URL로만 접근한다. 폐쇄형 서비스의 이미지가 검색에 노출되어서는 안 된다.</li>
+    <li>B-1이 개인의 열람 이력을 조회한다는 사실을 <strong>가입 시 고지</strong>한다.</li>
+  </ul>
+
+  <h3>가용성</h3>
+  <ul>
+    <li>목표 가용성 99% (월 약 7시간 다운 허용). 비상업 서비스 수준.</li>
+    <li>장애 시에도 <strong>A 첫 화면은 항상 뜬다.</strong></li>
+    <li>아침 7:00–9:00은 트래픽 피크로 간주하고 배포하지 않는다.</li>
+  </ul>
+</section>
+
+<section id="s9">
+  <div class="sec-head"><span class="n">09</span><h2>기술 구성</h2></div>
+
+  <h3>스택 — 현재 리포지토리 기준</h3>
+  <div class="tw"><table>
+    <thead><tr><th>영역</th><th>기술</th><th>비고</th></tr></thead>
+    <tbody>
+      <tr><td>Frontend</td><td class="wrap">Vite + React + TypeScript</td><td><code>frontend/</code></td></tr>
+      <tr><td>Backend</td><td class="wrap">AWS Chalice (Lambda + API Gateway)</td><td><code>backend/</code></td></tr>
+      <tr><td>DB</td><td class="wrap">PostgreSQL + SQLModel / psycopg2</td><td></td></tr>
+      <tr><td>이미지</td><td class="wrap">S3 + CloudFront (서명 URL)</td><td></td></tr>
+      <tr><td>인증</td><td class="wrap">JWT (90일 만료)</td><td></td></tr>
+      <tr><td>설정</td><td class="wrap">python-dotenv</td><td></td></tr>
+      <tr><td>알림</td><td class="wrap">웹 푸시 (MVP)</td><td></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>아키텍처상 유의점</h3>
+  <ul>
+    <li><strong>Lambda 콜드 스타트</strong> — 아침 7:30 알림 직후 트래픽이 몰린다. 알림 발송 시각에 맞춘 프로비저닝 또는 워밍을 검토한다.</li>
+    <li><strong>이미지 업로드 경로</strong> — 20MB 파일이 API Gateway를 통과하지 못한다(6MB 제한). <strong>S3 Presigned URL로 클라이언트가 직접 업로드</strong>하고, 완료 후 백엔드가 리사이즈를 트리거한다.</li>
+    <li><strong>리사이즈 처리</strong> — Lambda에서 Pillow로 처리하되 12장 동시 업로드 시 타임아웃에 유의한다. S3 이벤트 기반 비동기 처리를 권장한다.</li>
+    <li><strong>psycopg2-binary 아키텍처</strong> — Lambda를 ARM(Graviton)으로 배포하면 현재 설치된 x86-64 휠과 어긋난다. 배포 아키텍처를 먼저 확정해야 한다.</li>
+  </ul>
+
+  <h3>주요 API</h3>
+  <div class="tw"><table>
+    <thead><tr><th>메서드</th><th>경로</th><th>설명</th></tr></thead>
+    <tbody>
+      <tr><td><code>POST</code></td><td><code>/auth/signup</code></td><td class="wrap">가입 — <code>signup_open</code>이 false면 거부</td></tr>
+      <tr><td><code>POST</code></td><td><code>/auth/login</code></td><td class="wrap">로그인</td></tr>
+      <tr><td><code>GET</code></td><td><code>/exhibitions/current</code></td><td class="wrap"><strong>현재 전시</strong> — 가장 최근 발행분. 발행일과 연장 여부를 함께 반환 (§4.3)</td></tr>
+      <tr><td><code>GET</code></td><td><code>/exhibitions/{date}</code></td><td class="wrap">특정 날짜 전시</td></tr>
+      <tr><td><code>GET</code></td><td><code>/exhibitions/recent?limit=30</code></td><td class="wrap">아카이브 — 최근 30개 전시</td></tr>
+      <tr><td><code>POST</code></td><td><code>/artworks/{id}/view</code></td><td class="wrap">그림 열람 기록</td></tr>
+      <tr><td><code>GET</code></td><td><code>/admin/exhibitions?from&amp;to</code></td><td class="wrap">날짜별 발행 상태</td></tr>
+      <tr><td><code>POST</code></td><td><code>/admin/exhibitions/{date}</code></td><td class="wrap">전시 제목 · 테마 저장</td></tr>
+      <tr><td><code>POST</code></td><td><code>/admin/artworks/upload-url</code></td><td class="wrap">S3 Presigned URL 발급</td></tr>
+      <tr><td><code>GET</code></td><td><code>/admin/stats/daily</code></td><td class="wrap">날짜별 입장 현황</td></tr>
+      <tr><td><code>GET</code></td><td><code>/admin/stats/user?q=</code></td><td class="wrap">사용자별 감상 상세</td></tr>
+      <tr><td><code>GET</code></td><td><code>/admin/members</code></td><td class="wrap">회원 목록</td></tr>
+      <tr><td><code>POST</code></td><td><code>/admin/members/{id}/block</code></td><td class="wrap">회원 차단</td></tr>
+      <tr><td><code>POST</code></td><td><code>/admin/settings/signup</code></td><td class="wrap">가입 잠금 열기·닫기</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>리스크와 대응</h3>
+  <div class="tw"><table>
+    <thead><tr><th>ID</th><th>리스크</th><th>영향</th><th>대응</th></tr></thead>
+    <tbody>
+      <tr><td><strong>RISK-1</strong></td><td class="wrap"><strong>큐레이터 번아웃</strong> — 매일 12점 × 설명은 상당한 노동이다. 운영자가 멈추면 서비스가 끝난다</td><td><span class="tag tag--warn">치명적</span></td><td class="wrap">① <strong>연장 규칙(§4.3)</strong> — 하루 걸러도 서비스가 깨지지 않는다. 이 리스크에 대한 가장 강력한 대응이다 ② 여러 날치를 미리 준비하는 흐름을 1급 기능으로 (§5) ③ B-1 관람 현황으로 보상 제공 ④ 지표를 준수율이 아닌 빈도로 측정 (§3)</td></tr>
+      <tr><td><strong>RISK-2</strong></td><td class="wrap"><strong>초기 이탈</strong> — 가입은 했지만 며칠 뒤 안 들어옴</td><td><span class="tag tag--warn">높음</span></td><td class="wrap">알림(§6.12) + 아카이브(§6.8)를 MVP에 포함. 게임화는 하지 않음</td></tr>
+      <tr><td><strong>RISK-3</strong></td><td class="wrap"><strong>저작권</strong> — 비공개 · 비상업이라도 무위험은 아니다</td><td>중간</td><td class="wrap">① 퍼블릭 도메인(작가 사후 70년 경과) 우선 ② 미술관 오픈액세스(메트로폴리탄, 시카고 미술관, 리익스뮤지엄 등) 활용 ③ 소장처 · 출처 기록 ④ S3 비공개 + 검색 비노출</td></tr>
+      <tr><td><strong>RISK-4</strong></td><td class="wrap"><strong>전화번호 유출</strong> — 소규모라도 개인정보다</td><td>중간</td><td class="wrap">최소 수집, 해시 저장, 관리자 화면 서버 검증 (§8.4)</td></tr>
+      <tr><td><strong>RISK-5</strong></td><td class="wrap"><strong>이미지 비용</strong> — S3 + CloudFront 전송량</td><td>낮음</td><td class="wrap">3단 리사이즈(§8.2), 원본은 요청 시에만. 100명 규모에서 월 수천 원 수준</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="s10">
+  <div class="sec-head"><span class="n">10</span><h2>릴리스 계획</h2></div>
+  <div class="tw"><table>
+    <thead><tr><th>단계</th><th>범위</th><th>검증 기준</th></tr></thead>
+    <tbody>
+      <tr><td><strong>M0</strong><br>골격</td><td class="wrap">DB 스키마, 인증, 관리자 업로드 (B, B-2)</td><td class="wrap">큐레이터가 하루치 전시를 올릴 수 있다</td></tr>
+      <tr><td><strong>M1</strong><br>관람</td><td class="wrap">A, A-1, D, C, C-1, C-2</td><td class="wrap">초대받은 사람이 가입해서 12점을 볼 수 있다</td></tr>
+      <tr><td><strong>M2</strong><br>습관</td><td class="wrap">알림, C-3 아카이브</td><td class="wrap">아침 알림을 받고 들어온다. 놓친 날을 볼 수 있다</td></tr>
+      <tr><td><strong>M3</strong><br>MVP 공개</td><td class="wrap">가족 5명 대상 2주 운영</td><td class="wrap">14일 중 10일 이상 발행, 주간 감상률 60% 확인</td></tr>
+      <tr><td><strong>v1.1</strong></td><td class="wrap">B-1 관람 현황, A-2 재설정, 큰 글씨 모드</td><td class="wrap">지인 30명으로 확대</td></tr>
+      <tr><td><strong>v1.2</strong></td><td class="wrap">카카오 로그인, 예약 발행, 작가별 다시 보기</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+  <div class="note"><strong>M3의 의미</strong> — 지인 30명에게 URL을 보내기 전에, <strong>가족 5명과 2주를 먼저 돌린다.</strong> 연장 규칙 덕분에 며칠 걸러도 서비스는 깨지지 않지만, 14일 중 10일을 못 채우면 RISK-1이 현실이라는 뜻이므로 확대 대신 발행 리듬을 재설계한다 (§11 Q1).</div>
+</section>
+
+<section id="s11">
+  <div class="sec-head"><span class="n">11</span><h2>열린 질문</h2></div>
+  <p class="lede">이 PRD가 답하지 못한, 구현 전에 결정이 필요한 사항들.</p>
+  <div class="tw"><table>
+    <thead><tr><th>#</th><th>질문</th><th>왜 중요한가</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Q1</strong></td><td class="wrap"><strong>목표 발행 리듬을 무엇으로 잡을 것인가?</strong> 연장 규칙(§4.3)으로 '매일'이 강제 조건은 아니게 되었지만, 지향점은 정해야 한다</td><td class="wrap">알림 빈도와 §3의 발행 빈도 목표가 여기서 결정된다</td></tr>
+      <tr><td><strong>Q2</strong></td><td class="wrap">12점이 적정한가? 7점이나 5점으로도 '전시'가 성립하는가</td><td class="wrap">큐레이터 부담과 직결. 감상 지표(§3)로 검증 가능</td></tr>
+      <tr><td><strong>Q3</strong></td><td class="wrap">그림 설명을 큐레이터가 매번 직접 쓰는가, AI 초안 후 다듬는가</td><td class="wrap">집필이 업로드보다 오래 걸린다. Q1의 실질적 해법일 수 있다</td></tr>
+      <tr><td><strong>Q4</strong></td><td class="wrap">알림 채널 — 웹 푸시 vs 카카오 알림톡</td><td class="wrap">시니어(P2)는 웹 푸시 권한 허용에 실패할 가능성이 높다. 알림톡은 비용과 심사가 따른다</td></tr>
+      <tr><td><strong>Q5</strong></td><td class="wrap">회원이 K에게 반응을 전할 수단이 필요한가</td><td class="wrap">소셜 기능은 Non-goal이지만, 큐레이터의 동기(RISK-1) 측면에서는 필요할 수 있다</td></tr>
+      <tr><td><strong>Q7</strong></td><td class="wrap">연장이 길어질 때(예: 5일 이상) 관람자에게 다른 것을 보여줄까</td><td class="wrap">같은 전시가 일주일 걸려 있으면 앱을 여는 이유가 사라진다. 아카이브에서 무작위 전시를 다시 거는 안이 있다</td></tr>
+      <tr><td><strong>Q6</strong></td><td class="wrap">시니어 가입을 K가 대행하는 흐름을 정식 기능으로 만들 것인가</td><td class="wrap">P2가 가장 큰 수혜자인데 가입이 가장 큰 장벽이다</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="sa">
+  <div class="sec-head"><span class="n">부록 A</span><h2>원본 흐름도 대비 변경 요약</h2></div>
+  <div class="tw"><table>
+    <thead><tr><th>구분</th><th>내용</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag tag--new">추가 화면 6</span></td><td class="wrap">A-1 로그인 · A-2 비밀번호 재설정 · C-3 지난 전시 · B-1-1 사용자별 감상 상세 · B-2-1 전시 테마 입력 · B-2-2 그림 업로드</td></tr>
+      <tr><td><span class="tag tag--new">추가 기능 4</span></td><td class="wrap"><strong>미발행일 자동 연장 규칙</strong> · 가입 잠금 + 회원 차단 · 매일 아침 알림 · 그림 화면 좌우 스와이프</td></tr>
+      <tr><td><span class="tag tag--gap">사양 변경 7</span></td><td class="wrap">그림 설명 50자 → <strong>300자</strong> · B 화면 과거 날짜 스크롤 허용 · <strong>관리자 3열을 Y / ↑ / N 세 상태로</strong> · <strong>입장 회수를 관람일 기준 UV로 정의</strong> · 아카이브 "30일" → "30개 전시" · 소장처 / 출처 필드 추가 · 초대 코드 폐기(URL이 초대장)</td></tr>
+      <tr><td><span class="tag tag--warn">정정 3</span></td><td class="wrap">B-2 "되지 않은 경우 Y" → <strong>N</strong> · B-1 조회 기간을 7일(전체) / 30일(개인)로 통일 · C 화면의 '업로드 현황' 레이블 제거</td></tr>
+      <tr><td><span class="tag tag--ok">유지</span></td><td class="wrap">12점 구성 · 전시 제목 20자 · 테마 500자 · 그림 제목 20자 · 관리자 목록의 오늘-최상단 정렬 · 모든 화면의 명시적 되돌아가기 링크</td></tr>
+    </tbody>
+  </table></div>
+</section>
+</main>
+</div>
+
+<footer class="foot">
+  <div class="foot__in">
+    <div><strong>갤러리 K</strong> · Product Requirements Document v1.0</div>
+    <div>2026. 08. 27. · 근거 자료: 갤러리 K 서비스 흐름 및 화면.pdf</div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  var map = {};
+  links.forEach(function(a){
+    var el = document.querySelector(a.getAttribute('href'));
+    if (el) map[el.id] = a;
+  });
+  if (!('IntersectionObserver' in window)) return;
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      var a = map[e.target.id];
+      if (!a) return;
+      if (e.isIntersecting) {
+        links.forEach(function(l){ l.classList.remove('on'); });
+        a.classList.add('on');
+      }
+    });
+  }, { rootMargin: '-10% 0px -80% 0px' });
+  Object.keys(map).forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) io.observe(el);
+  });
+})();
+</script>
