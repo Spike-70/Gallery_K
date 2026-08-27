@@ -71,7 +71,7 @@ frontend/
     │   │   └── loaders.ts           # 라우트 진입 프리페치
     │   ├── providers/
     │   │   ├── QueryProvider.tsx
-    │   │   ├── SessionProvider.tsx  # 세션 부트스트랩 + 미디어 서명 쿠키 갱신 타이머
+    │   │   ├── SessionProvider.tsx  # 세션 부트스트랩
     │   │   ├── FontScaleProvider.tsx# data-font-scale 속성 동기화
     │   │   ├── ToastProvider.tsx
     │   │   └── AppErrorBoundary.tsx
@@ -128,7 +128,7 @@ frontend/
     │       │   ├── ArtworkEditorPage.tsx
     │       │   ├── PreviewPage.tsx
     │       │   ├── components/SlotGrid.tsx · SlotButton.tsx · UploadDropzone.tsx · SaveIndicator.tsx
-    │       │   ├── hooks/useAutoSave.ts · useUploadQueue.ts · useSlotPolling.ts · useReorder.ts
+    │       │   ├── hooks/useAutoSave.ts · useUploadQueue.ts · useReorder.ts
     │       │   └── model/editorSchemas.ts
     │       ├── members/             # B-3. 회원 관리
     │       ├── stats/               # B-1, B-1-1 (v1.1)
@@ -429,7 +429,7 @@ frontend/
 3. 세션 결과에 따라 라우터 진입
 4. `/` 진입 시 `GET /public/landing`, `/gallery` 진입 시 `GET /exhibitions/current`
 
-**미디어 쿠키 유지** — `GET /auth/session` 응답의 `media_session_expires_at`을 보관하고, 만료 10분 전 또는 앱이 포그라운드로 복귀했을 때 만료가 임박했으면 `POST /media/session`을 호출한다. 갱신 실패 시 이미지가 403으로 깨지므로, 이미지 로드 실패가 연속 3회 발생하면 쿠키 갱신을 1회 강제 시도한 뒤 재시도한다.
+**이미지 URL 복구** — 이미지 URL은 응답에 담겨 오는 만료 있는 presigned URL이다(API 문서 §6.10). 만료되면 전 이미지가 한꺼번에 깨지므로, 이미지 로드 실패가 **연속 3회** 발생하면 그림을 담은 쿼리를 1회 무효화해 새 URL을 받는다. 복구 수단은 `QueryProvider`가 주입하고, 이미지 컴포넌트는 실패 사실만 알린다.
 
 **낙관적 병렬화** — 로컬 스토리지에 "이전 방문에서 인증됨" 마커가 있으면 세션 확인과 `/exhibitions/current`를 **동시에** 시작한다. 세션이 무효로 판명되면 진행 중 요청을 취소하고 로그인으로 보낸다. 이 최적화가 C 화면 도달을 1회 왕복만큼 단축한다(API 문서 §11.1).
 
@@ -509,9 +509,9 @@ C(갤러리 그리드) → C-2(그림) → 뒤로가기에서 **그리드 스크
 | 앱 셸(JS/CSS/HTML) | Precache + `CacheFirst` | 배포마다 갱신 |
 | 폰트 | `CacheFirst` | 1년 |
 | `/media/artworks/*` | `CacheFirst` | 30일 / 최대 200개 |
-| `GET /api/v1/exhibitions/current` | `NetworkFirst` (타임아웃 3초) | 7일 |
-| `GET /api/v1/exhibitions/{date}` | `NetworkFirst` | 7일 |
-| `GET /api/v1/public/landing` | `NetworkFirst` (타임아웃 2초) | 1일 |
+| `GET /api/exhibitions/current` | `NetworkFirst` (타임아웃 3초) | 7일 |
+| `GET /api/exhibitions/{date}` | `NetworkFirst` | 7일 |
+| `GET /api/public/landing` | `NetworkFirst` (타임아웃 2초) | 1일 |
 | 그 외 API | `NetworkOnly` | — |
 
 **오프라인 동작** — 네트워크가 없으면 마지막으로 본 전시를 캐시에서 렌더하고 상단에 안내 바를 띄운다(PRD §6.5). 관리자 화면은 오프라인을 지원하지 않으며 명시적 안내를 보여준다.
@@ -633,7 +633,7 @@ C(갤러리 그리드) → C-2(그림) → 뒤로가기에서 **그리드 스크
 
 | 변수 | 예 | 용도 |
 |---|---|---|
-| `VITE_API_BASE_URL` | `/api/v1` | 동일 오리진이므로 상대 경로 |
+| `VITE_API_BASE_URL` | `/api` | 동일 오리진이므로 상대 경로 |
 | `VITE_VAPID_PUBLIC_KEY` | | 푸시 구독 |
 | `VITE_APP_ENV` | `dev`/`staging`/`prod` | |
 | `VITE_SENTRY_DSN` | (선택) | 오류 수집 |
@@ -688,7 +688,7 @@ S3 동기화 → CloudFront 무효화(`/index.html`, `/manifest.webmanifest`, `/
 | **F-9** | (없음) | 세션·전시 병렬 부팅. C 도달 왕복을 1회 줄인다 |
 | **F-10** | (없음) | 서비스워커 업데이트를 사용자 확인 후 적용. 감상 중 리로드 방지 |
 | **F-11** | 교차 검토 | 마이크로카피를 `shared/config/messages.ts` 단일 원천으로 규정(UX 문서 §5와 1:1) |
-| **F-12** | 교차 검토 | 미디어 서명 쿠키 갱신 규칙 명문화. 만료 시 전 이미지가 403이 되는 단일 실패 지점이다 |
+| **F-12** | 교차 검토 | presigned 이미지 URL 만료 복구 규칙 명문화. 만료 시 전 이미지가 한꺼번에 깨지는 단일 실패 지점이다 |
 | **F-13** | 교차 검토 | 푸시 구독 대조에 `GET /me/push-subscriptions` 사용을 명시(해당 엔드포인트를 API 문서에 추가) |
 | **F-14** | 교차 검토 | `/archive/:date/artworks/:id` 경로 추가 | 아카이브에서 연 그림의 되돌아가기 대상이 오늘의 갤러리로 튕기는 문제 |
 | **F-15** | 교차 검토 | 컴포넌트 소속 판정표(§4.2) 추가 | 디자인 카탈로그와 디렉터리의 대응이 불명확했다 |
