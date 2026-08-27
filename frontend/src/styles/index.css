@@ -1,0 +1,14 @@
+/**
+ * 스타일 진입점 — 디자인 시스템 문서 §11.1
+ *
+ * `@import`는 CSS 규격상 최상단에 와야 한다(postcss-import가 빌드 시 인라인한다).
+ * `base.css`의 `@layer` 블록은 Tailwind가 수집해 아래 `@tailwind` 위치에 주입하므로
+ * 파일 내 순서와 무관하게 올바른 계층에 배치된다.
+ */
+
+@import './tokens.css';
+@import './base.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

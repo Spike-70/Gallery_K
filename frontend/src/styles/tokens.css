@@ -1,0 +1,198 @@
+/**
+ * 디자인 토큰 — 디자인 시스템 문서 §2·§3·§4·§5·§6
+ *
+ * 3계층: 원시(primitive) → 의미(semantic) → 컴포넌트(Tailwind 유틸).
+ * 컴포넌트는 **의미 토큰만** 소비한다. 원시 값을 직접 참조하지 않는다.
+ *
+ * 스코프
+ *  :root                              기본
+ *  html[data-font-scale="large"]      큰 글씨 모드 (타이포 스케일 + 그리드 열 수)
+ *  .gk-immersive                      전체화면 뷰어 (표면·텍스트 색)
+ *  html[data-surface="studio"]        관리자 화면 (밀도)
+ */
+
+:root {
+  /* ── 1계층: 원시 팔레트 (§3.1) ─────────────────────────────────────── */
+  --gk-neutral-0: #ffffff;
+  --gk-neutral-50: #faf9f7;
+  --gk-neutral-100: #f2f0ec;
+  --gk-neutral-200: #e4e1db;
+  --gk-neutral-300: #cbc7bf;
+  --gk-neutral-400: #a8a39a;
+  --gk-neutral-500: #807a70;
+  --gk-neutral-600: #5f5a52;
+  --gk-neutral-700: #403c36;
+  --gk-neutral-800: #2a2724;
+  --gk-neutral-900: #1a1816;
+  --gk-ink-black: #0b0a09;
+
+  --gk-accent-050: #f5efe4;
+  --gk-accent-500: #8c6a3f;
+  --gk-accent-600: #6f5330;
+
+  --gk-success-500: #3f7a4f;
+  --gk-warning-500: #b0762a;
+  --gk-danger-500: #a83c34;
+  --gk-danger-050: #f7ecea;
+  --gk-info-500: #3a6079;
+
+  /* ── 2계층: 의미 토큰 — 색 (§3.2) ─────────────────────────────────── */
+  --gk-bg-canvas: var(--gk-neutral-50);
+  --gk-bg-surface: var(--gk-neutral-0);
+  --gk-bg-subtle: var(--gk-neutral-100);
+  --gk-bg-overlay: rgba(26, 24, 22, 0.55);
+  --gk-bg-accent-subtle: var(--gk-accent-050);
+
+  --gk-text-primary: var(--gk-neutral-800);
+  --gk-text-secondary: var(--gk-neutral-600);
+  --gk-text-tertiary: var(--gk-neutral-500);
+  --gk-text-placeholder: var(--gk-neutral-400);
+  --gk-text-inverse: var(--gk-neutral-0);
+  --gk-text-accent: var(--gk-accent-600);
+
+  --gk-border-default: var(--gk-neutral-200);
+  --gk-border-strong: var(--gk-neutral-300);
+  --gk-border-focus: var(--gk-accent-500);
+
+  --gk-action-primary-bg: var(--gk-neutral-800);
+  --gk-action-primary-bg-hover: var(--gk-neutral-900);
+  --gk-action-primary-fg: var(--gk-neutral-0);
+  --gk-action-danger-fg: var(--gk-danger-500);
+  --gk-action-danger-bg-subtle: var(--gk-danger-050);
+
+  --gk-status-published: var(--gk-success-500);
+  --gk-status-empty: var(--gk-warning-500);
+  --gk-status-carried: var(--gk-neutral-500);
+  --gk-status-info: var(--gk-info-500);
+
+  /* ── 2계층: 의미 토큰 — 타이포 (§4.2, normal 모드) ─────────────────── */
+  --gk-font-size-display: 28px;
+  --gk-line-height-display: 1.3;
+  --gk-letter-spacing-display: -0.02em;
+  --gk-font-weight-display: 600;
+
+  --gk-font-size-title-lg: 24px;
+  --gk-line-height-title-lg: 1.35;
+  --gk-letter-spacing-title-lg: -0.015em;
+  --gk-font-weight-title-lg: 600;
+
+  --gk-font-size-title-md: 20px;
+  --gk-line-height-title-md: 1.4;
+  --gk-letter-spacing-title-md: -0.01em;
+  --gk-font-weight-title-md: 600;
+
+  --gk-font-size-title-sm: 18px;
+  --gk-line-height-title-sm: 1.45;
+  --gk-letter-spacing-title-sm: 0;
+  --gk-font-weight-title-sm: 600;
+
+  --gk-font-size-body-lg: 17px;
+  --gk-line-height-body-lg: 1.75;
+  --gk-letter-spacing-body-lg: 0;
+  --gk-font-weight-body-lg: 400;
+
+  --gk-font-size-body-md: 16px;
+  --gk-line-height-body-md: 1.6;
+  --gk-letter-spacing-body-md: 0;
+  --gk-font-weight-body-md: 400;
+
+  --gk-font-size-body-sm: 15px;
+  --gk-line-height-body-sm: 1.55;
+  --gk-letter-spacing-body-sm: 0;
+  --gk-font-weight-body-sm: 400;
+
+  --gk-font-size-caption: 14px;
+  --gk-line-height-caption: 1.45;
+  --gk-letter-spacing-caption: 0.01em;
+  --gk-font-weight-caption: 400;
+
+  --gk-font-size-label: 14px;
+  --gk-line-height-label: 1.3;
+  --gk-letter-spacing-label: 0.02em;
+  --gk-font-weight-label: 500;
+
+  --gk-font-size-mono-num: 20px;
+  --gk-line-height-mono-num: 1.2;
+  --gk-letter-spacing-mono-num: 0;
+  --gk-font-weight-mono-num: 600;
+
+  /* ── 2계층: 의미 토큰 — 간격 (§5.1) ───────────────────────────────── */
+  --gk-space-1: 4px;
+  --gk-space-2: 8px;
+  --gk-space-3: 12px;
+  --gk-space-4: 16px;
+  --gk-space-5: 20px;
+  --gk-space-6: 24px;
+  --gk-space-8: 32px;
+  --gk-space-10: 40px;
+  --gk-space-12: 48px;
+  --gk-space-16: 64px;
+
+  /* ── 2계층: 의미 토큰 — 형태 (§5.4) ───────────────────────────────── */
+  --gk-radius-sm: 4px;
+  --gk-radius-md: 8px;
+  --gk-radius-lg: 12px;
+  --gk-radius-full: 9999px;
+  --gk-shadow-sheet: 0 -4px 24px rgba(26, 24, 22, 0.1);
+  --gk-shadow-dialog: 0 8px 32px rgba(26, 24, 22, 0.16);
+
+  /* ── 2계층: 의미 토큰 — 모션 (§6) ─────────────────────────────────── */
+  --gk-duration-instant: 100ms;
+  --gk-duration-fast: 180ms;
+  --gk-duration-base: 260ms;
+  --gk-duration-slow: 400ms;
+  --gk-ease-standard: cubic-bezier(0.2, 0, 0.2, 1);
+  --gk-ease-decelerate: cubic-bezier(0, 0, 0.2, 1);
+  --gk-ease-accelerate: cubic-bezier(0.4, 0, 1, 1);
+
+  /* ── 2계층: 의미 토큰 — 그리드 (§5.3) ─────────────────────────────── */
+  --gk-grid-columns: 3;
+  --gk-grid-gap: var(--gk-space-2);
+}
+
+/* 큰 글씨 모드 — 값만 교체된다. 컴포넌트 클래스는 그대로다(§11.3). */
+html[data-font-scale='large'] {
+  --gk-font-size-display: 32px;
+  --gk-font-size-title-lg: 28px;
+  --gk-font-size-title-md: 23px;
+  --gk-font-size-title-sm: 20px;
+
+  --gk-font-size-body-lg: 20px;
+  --gk-line-height-body-lg: 1.8;
+  --gk-font-size-body-md: 18px;
+  --gk-line-height-body-md: 1.65;
+  --gk-font-size-body-sm: 17px;
+  --gk-line-height-body-sm: 1.6;
+
+  --gk-font-size-caption: 16px;
+  --gk-line-height-caption: 1.5;
+  --gk-font-size-label: 16px;
+  --gk-font-size-mono-num: 22px;
+
+  /* 3열 → 2열 전환도 같은 메커니즘이다(§5.3). */
+  --gk-grid-columns: 2;
+  --gk-grid-gap: var(--gk-space-3);
+}
+
+/* 전체화면 뷰어 — 표면·텍스트 색만 교체한다(§3.2). */
+.gk-immersive {
+  --gk-bg-canvas: var(--gk-ink-black);
+  --gk-bg-surface: var(--gk-ink-black);
+  --gk-bg-subtle: #151311;
+  --gk-bg-overlay: rgba(0, 0, 0, 0.85);
+
+  --gk-text-primary: var(--gk-neutral-50);
+  --gk-text-secondary: var(--gk-neutral-300);
+  --gk-text-tertiary: var(--gk-neutral-400);
+  --gk-text-inverse: var(--gk-neutral-900);
+  --gk-text-accent: var(--gk-accent-500);
+
+  --gk-border-default: rgba(255, 255, 255, 0.14);
+  --gk-border-strong: rgba(255, 255, 255, 0.28);
+}
+
+/* 관리자 화면 — 밀도 토큰만 조정한다(§2.2). */
+html[data-surface='studio'] {
+  --gk-space-16: 48px;
+  --gk-space-12: 40px;
+}
