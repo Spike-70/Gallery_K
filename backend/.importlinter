@@ -1,0 +1,78 @@
+; 계층 규칙 — 백엔드 문서 §5
+; "아키텍처 규칙은 테스트로 존재해야 유지된다."
+
+[importlinter]
+root_packages =
+    chalicelib
+include_external_packages = True
+
+[importlinter:contract:layers]
+name = 계층은 단방향이다 (api → services → db)
+type = layers
+layers =
+    api
+    services
+    db
+containers =
+    chalicelib
+
+[importlinter:contract:services-framework-free]
+name = services 는 프레임워크를 모른다 (BA-5)
+type = forbidden
+source_modules =
+    chalicelib.services
+forbidden_modules =
+    chalice
+    chalicelib.api
+    chalicelib.schemas
+
+[importlinter:contract:api-no-models]
+name = api 는 db.models 를 직접 import 하지 않는다
+type = forbidden
+; 서비스를 거친 간접 참조는 정상이다. 문서가 금지하는 것은 "직접" import 다.
+allow_indirect_imports = True
+source_modules =
+    chalicelib.api
+forbidden_modules =
+    chalicelib.db.models
+
+[importlinter:contract:core-is-lowest]
+name = core 는 어떤 상위 계층도 import 하지 않는다
+type = forbidden
+source_modules =
+    chalicelib.core
+forbidden_modules =
+    chalicelib.api
+    chalicelib.services
+    chalicelib.db
+    chalicelib.schemas
+    chalicelib.integrations
+    chalicelib.jobs
+
+[importlinter:contract:db-is-low]
+name = db·integrations 는 상위 계층을 import 하지 않는다
+type = forbidden
+source_modules =
+    chalicelib.db
+    chalicelib.integrations
+forbidden_modules =
+    chalicelib.api
+    chalicelib.services
+    chalicelib.schemas
+    chalicelib.jobs
+
+[importlinter:contract:boto3-isolated]
+name = boto3·외부 HTTP 는 integrations 에서만 import 한다
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    chalicelib.api
+    chalicelib.services
+    chalicelib.db
+    chalicelib.core
+    chalicelib.schemas
+forbidden_modules =
+    boto3
+    botocore
+    pywebpush
+    requests

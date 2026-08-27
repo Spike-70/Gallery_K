@@ -1,0 +1,18 @@
+# 배포 패키지(Lambda) 런타임 의존성.
+#
+# 여기 없는 것 둘과 그 이유
+#   * boto3·botocore — Lambda 런타임이 제공한다
+#   * chalice        — 패키저가 런타임 파일(`chalice/app.py`·`__init__.py`)을 직접
+#                      주입하며, 그 두 파일은 표준 라이브러리만 쓴다. requirements에
+#                      넣으면 botocore·PyYAML·pip 등 CLI 의존성까지 딸려 들어와
+#                      배포 패키지가 20MB 이상 불어난다(문서 §14 "패키지를 작게 유지").
+#                      빌드 도구로서 requirements-dev.txt에 있다.
+SQLAlchemy==2.0.52
+sqlmodel==0.0.39
+psycopg[binary]==3.2.10
+pydantic==2.13.4
+PyJWT==2.13.0
+bcrypt==5.0.0
+Pillow==12.3.0
+pywebpush==2.0.3
+python-dotenv==1.2.3

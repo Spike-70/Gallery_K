@@ -1,0 +1,75 @@
+# 갤러리 K 백엔드 — 도구 설정 단일 지점
+# 패키징에는 쓰지 않는다. Chalice가 requirements.txt로 배포 패키지를 만든다.
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+extend-exclude = [".chalice", ".venv", "migrations/versions"]
+
+[tool.ruff.lint]
+select = [
+  "E", "W",    # pycodestyle
+  "F",         # pyflakes
+  "I",         # isort
+  "UP",        # pyupgrade
+  "B",         # bugbear
+  "C4",        # comprehensions
+  "SIM",       # simplify
+  "TID",       # tidy-imports (금지 API 규칙이 여기에 붙는다)
+  "RUF",
+]
+ignore = [
+  "B008",    # 데코레이터 팩토리를 기본 인자로 쓰는 관용을 허용한다
+  "RUF001", "RUF002", "RUF003",  # 주석·문서화 문자열의 한글 사용
+]
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+# 백엔드 문서 §8.1 — 환경변수를 읽는 지점은 config/settings.py 하나뿐이다.
+"os.environ" = { msg = "환경변수는 chalicelib.config.settings 를 통해서만 읽는다 (백엔드 문서 §8.1)" }
+"os.getenv" = { msg = "환경변수는 chalicelib.config.settings 를 통해서만 읽는다 (백엔드 문서 §8.1)" }
+# 백엔드 문서 §8.4 — 시간을 만드는 모듈은 core/timeutil 하나뿐이다.
+"datetime.datetime.now" = { msg = "현재 시각은 chalicelib.core.timeutil 을 통해서만 얻는다 (백엔드 문서 §8.4)" }
+"datetime.datetime.utcnow" = { msg = "현재 시각은 chalicelib.core.timeutil 을 통해서만 얻는다 (백엔드 문서 §8.4)" }
+"datetime.date.today" = { msg = "업무 날짜는 chalicelib.core.timeutil.kst_today() 를 쓴다 (DB 문서 §2)" }
+"time.time" = { msg = "현재 시각은 chalicelib.core.timeutil 을 통해서만 얻는다 (백엔드 문서 §8.4)" }
+
+[tool.ruff.lint.per-file-ignores]
+# 설정·시간 모듈 자신과 테스트는 위 금지 규칙의 예외다.
+"chalicelib/config/settings.py" = ["TID251"]
+"chalicelib/core/timeutil.py" = ["TID251"]
+"migrations/env.py" = ["TID251"]
+"tests/**" = ["TID251"]
+"scripts/**" = ["TID251"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["chalicelib", "app"]
+
+[tool.mypy]
+python_version = "3.12"
+plugins = []
+files = ["chalicelib", "app.py"]
+exclude = "(^\\.venv|^migrations/versions)"
+strict_equality = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_unreachable = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+no_implicit_optional = true
+check_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = ["chalice.*", "pywebpush.*", "py_vapid.*", "sqlmodel.*", "boto3.*", "botocore.*", "pgserver.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q --strict-markers"
+markers = [
+  "integration: 실제 PostgreSQL이 필요한 테스트 (백엔드 문서 §12)",
+]
+
+[tool.coverage.run]
+source = ["chalicelib"]
+omit = ["*/__init__.py"]

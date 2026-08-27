@@ -1,2 +1,13 @@
 .chalice/deployments/
 .chalice/venv/
+.env
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.import_linter_cache/
+.pgdata/
+dist/

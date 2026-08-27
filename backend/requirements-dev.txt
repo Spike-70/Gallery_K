@@ -1,2 +1,23 @@
+-r requirements.txt
+
+# 빌드 도구. 런타임 의존성이 아니다 — requirements.txt 주석 참고.
 chalice==1.33.0
-pytest
+
+# 검증 도구
+pytest==9.0.1
+pytest-cov==7.0.0
+ruff==0.15.1
+mypy==1.19.1
+import-linter==2.4
+
+# 마이그레이션(배포 패키지 제외 — 파이프라인 독립 단계에서 실행)
+alembic==1.19.1
+
+# 통합 테스트용 PostgreSQL 16 바이너리. 로컬·CI에서만 쓴다.
+pgserver==0.1.4
+
+# 로컬에서 S3를 흉내 내는 어댑터 테스트용
+boto3==1.43.81
+
+# 의존성 취약점 점검 (백엔드 문서 §13)
+pip-audit==2.10.1
