@@ -10,6 +10,7 @@ import type { CursorPage } from '@/shared/api/pagination'
 //   RawExhibitionDetail,
 // } from '@/shared/api/types'
 import { CALENDAR_DEFAULT_DAYS } from '@/shared/config/constants'
+import type { ImageStatus } from '@/shared/types/enums'
 import type { IsoDate, Uuid } from '@/shared/types/utility'
 
 import { toExhibition } from '@/entities/exhibition/api/mappers'
@@ -218,15 +219,16 @@ export type UploadTicket = {
   position: number
   artworkId: Uuid
   uploadUrl: string
-  method: 'PUT'
-  headers: Record<string, string>
+  method: 'POST'
+  /** 서명 정책 필드. **순서대로 폼에 담고 파일을 마지막에 붙인다**(API 문서 §9.8) */
+  fields: Record<string, string>
   objectKey: string
   expiresAt: string
 }
 
 /**
- * `POST /admin/exhibitions/{date}/artworks/upload-urls` — Presigned URL 배치 발급
- * 20MB 파일은 API Gateway를 통과할 수 없으므로 클라이언트가 S3로 직접 올린다(PRD §9.2).
+ * `POST /admin/exhibitions/{date}/artworks/upload-urls` — presigned POST 자격 배치 발급
+ * 20MB 파일은 API Gateway를 통과할 수 없으므로 클라이언트가 S3로 직접 올린다.
  */
 export async function requestUploadUrls(
   date: IsoDate,
@@ -251,20 +253,30 @@ export async function requestUploadUrls(
     artworkId: upload.artwork_id,
     uploadUrl: upload.upload_url,
     method: upload.method,
-    headers: upload.headers,
+    fields: upload.fields,
     objectKey: upload.object_key,
     expiresAt: upload.expires_at,
   }))
 }
 
-/** `POST /admin/artworks/{id}/image/complete` — S3 이벤트의 보조 경로 */
-export async function completeImageUpload(artworkId: Uuid, objectKey: string): Promise<void> {
+/**
+ * `POST /admin/artworks/{id}/image/complete` — 업로드 완료 통지
+ *
+ * 서버가 **이 요청 안에서 동기로** 이미지를 변환하고 결과 상태로 응답한다(API 문서 §9.9).
+ * 응답이 곧 처리 완료 통지이므로 화면은 폴링하지 않는다.
+ */
+export async function completeImageUpload(artworkId: Uuid, objectKey: string): Promise<ImageStatus> {
   // [API]
-  // await httpClient.post(endpoints.admin.imageComplete(artworkId), { object_key: objectKey })
+  // const raw = await httpClient.post<{ image_status: ImageStatus }>(
+  //   endpoints.admin.imageComplete(artworkId),
+  //   { object_key: objectKey },
+  // )
+  // return raw.image_status
 
   // [MOCK]
   void objectKey
-  await adminMock.completeImageUpload(artworkId)
+  const raw = await adminMock.completeImageUpload(artworkId)
+  return raw.image_status
 }
 
 /** `POST /admin/exhibitions/{date}/carry-draft` — 복사가 아니라 이동이다 */

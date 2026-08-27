@@ -133,18 +133,5 @@ export async function fetchMe(): Promise<SessionUser> {
   return toSessionUser(raw.user)
 }
 
-/** `POST /media/session` — 만료 10분 전에 호출한다(프런트 §8.2) */
-export async function refreshMediaSession(): Promise<{ expiresAt: string }> {
-  // [API]
-  // const raw = await httpClient.post<{ expires_at: string; resource_prefix: string }>(
-  //   endpoints.media.session(),
-  // )
-  // return { expiresAt: raw.expires_at }
-
-  // [MOCK]
-  const raw = await authMock.createMediaSession()
-  return { expiresAt: raw.expires_at }
-}
-
 // 실제 호출로 교체할 때 타입이 즉시 맞도록 원형 타입을 여기서 참조해 둔다.
 export type { RawSession, RawSessionUser }

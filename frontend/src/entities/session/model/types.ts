@@ -19,8 +19,6 @@ export type SessionUser = {
 export type Session = {
   isAuthenticated: boolean
   user: SessionUser | null
-  /** 만료 10분 전에 미디어 쿠키를 갱신한다(프런트 §8.2 F-12) */
-  mediaSessionExpiresAt: IsoDateTime | null
 }
 
 export function isCurator(user: SessionUser | null): boolean {

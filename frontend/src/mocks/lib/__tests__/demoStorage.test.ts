@@ -13,11 +13,8 @@ describe('데모 상태 보존', () => {
   })
 
   it('세션을 저장하고 다음 부팅에서 그대로 읽는다', () => {
-    writeDemo(DEMO_KEYS.session, { currentUserId: 'mb1', mediaSessionExpiresAt: null })
-    expect(readDemo(DEMO_KEYS.session, null)).toEqual({
-      currentUserId: 'mb1',
-      mediaSessionExpiresAt: null,
-    })
+    writeDemo(DEMO_KEYS.session, { currentUserId: 'mb1' })
+    expect(readDemo(DEMO_KEYS.session, null)).toEqual({ currentUserId: 'mb1' })
   })
 
   it('값이 깨져 있으면 기본값으로 물러선다 — 데모가 멈추지 않는다', () => {

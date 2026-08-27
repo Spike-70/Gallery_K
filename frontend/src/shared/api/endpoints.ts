@@ -20,10 +20,6 @@ export const endpoints = {
     passwordResetConfirm: () => '/auth/password/reset/confirm',
   },
 
-  media: {
-    session: () => '/media/session',
-  },
-
   exhibitions: {
     current: () => '/exhibitions/current',
     byDate: (date: IsoDate) => `/exhibitions/${date}`,

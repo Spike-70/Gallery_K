@@ -120,7 +120,6 @@ export const status = {
   adminOffline: '연결이 없어 관리자 화면을 열 수 없습니다',
   exhibitionLoadFailed: '전시를 불러오지 못했습니다',
   imageLoadFailed: '그림을 불러오지 못했습니다',
-  processingDelayed: '처리가 지연되고 있습니다',
   memberEmpty: '아직 회원이 없습니다',
   statsEmpty: '아직 기록이 없습니다',
   noticeEmpty: '예정된 공지가 없습니다',
@@ -267,7 +266,6 @@ export const screens = {
     uploadOverflow: (count: number) => `빈 자리보다 ${count}장이 많습니다. 나머지는 올리지 않았습니다.`,
     slotEmpty: '빈 자리',
     slotUploading: '올리는 중',
-    slotProcessing: '처리 중',
     slotFailed: '올리지 못했습니다',
     /** 미완성 슬롯의 문자 표기 — 색 단독 표기를 피한다(DS-5, GAP-15) */
     slotIncompleteMark: 'N',

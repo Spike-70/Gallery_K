@@ -12,7 +12,6 @@ import { PublishStatus } from '@/features/admin/exhibition-editor/components/Pub
 import { SaveIndicator, type SaveState } from '@/features/admin/exhibition-editor/components/SaveIndicator'
 import { SlotGrid } from '@/features/admin/exhibition-editor/components/SlotGrid'
 import { UploadDropzone } from '@/features/admin/exhibition-editor/components/UploadDropzone'
-import { useSlotPolling } from '@/features/admin/exhibition-editor/hooks/useSlotPolling'
 import { useUploadQueue } from '@/features/admin/exhibition-editor/hooks/useUploadQueue'
 import { resolveErrorMessage } from '@/shared/api/errorMessages'
 import { actions, screens, status } from '@/shared/config/messages'
@@ -33,10 +32,7 @@ export function ExhibitionEditorPage() {
   const isDesktop = useIsDesktop()
   const [selectedPosition, setSelectedPosition] = useState(1)
 
-  // 폴링은 60초에서 멈춘다. 멈춘 뒤에는 화면이 지연을 알리고 재시도 수단을 준다(API §9.9).
-  const [pollingStopped, setPollingStopped] = useState(false)
-  const query = useAdminExhibitionQuery(date, { polling: !pollingStopped })
-  const polling = useSlotPolling(query.data?.slots)
+  const query = useAdminExhibitionQuery(date)
 
   const upload = useUploadQueue(date as IsoDate, query.data?.slots)
   const saveSlot = useSaveArtworkSlotMutation(date as IsoDate)
@@ -56,10 +52,6 @@ export function ExhibitionEditorPage() {
   useEffect(() => {
     if (publishedNow) toast.info(status.published)
   }, [publishedNow])
-
-  useEffect(() => {
-    if (polling.timedOut) setPollingStopped(true)
-  }, [polling.timedOut])
 
   if (!date) return null
 
@@ -104,25 +96,6 @@ export function ExhibitionEditorPage() {
           {screens.editor.themeCardCounter(exhibition.title?.length ?? 0, exhibition.theme?.length ?? 0)}
         </span>
       </Link>
-
-      {/* 처리가 60초를 넘기면 폴링을 멈추고 **그 자리에서** 다시 확인할 수단을 준다(§10 체감 성능). */}
-      {pollingStopped ? (
-        <Banner
-          tone="info"
-          message={status.processingDelayed}
-          action={
-            <TextButton
-              tone="accent"
-              onClick={() => {
-                setPollingStopped(false)
-                void query.refetch()
-              }}
-            >
-              {actions.retry}
-            </TextButton>
-          }
-        />
-      ) : null}
 
       <div className="flex items-center justify-between">
         <span className="text-label text-tertiary">{screens.editor.slotsSection}</span>

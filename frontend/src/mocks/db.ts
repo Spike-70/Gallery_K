@@ -241,19 +241,15 @@ type MockDb = {
   viewedArtworks: Set<string>
   /** 입장한 관람일 집합 */
   enteredDates: Set<IsoDate>
-  mediaSessionExpiresAt: string | null
 }
 
 /**
  * 세션만 브라우저에 남긴다 — 새로고침해도 로그인이 유지되어야 90일 자동 로그인(GAP-14)을
  * 데모에서 보여줄 수 있다. 전시 원고·업로드는 일부러 남기지 않는다(`demoStorage.ts` 참조).
  */
-type DemoSession = { currentUserId: Uuid | null; mediaSessionExpiresAt: string | null }
+type DemoSession = { currentUserId: Uuid | null }
 
-const restoredSession = readDemo<DemoSession>(DEMO_KEYS.session, {
-  currentUserId: null,
-  mediaSessionExpiresAt: null,
-})
+const restoredSession = readDemo<DemoSession>(DEMO_KEYS.session, { currentUserId: null })
 
 let sessionState: DemoSession = { ...restoredSession }
 
@@ -280,14 +276,6 @@ export const db: MockDb = {
     sessionState.currentUserId = value
     persistSession()
   },
-  get mediaSessionExpiresAt() {
-    return sessionState.mediaSessionExpiresAt
-  },
-  set mediaSessionExpiresAt(value: string | null) {
-    sessionState.mediaSessionExpiresAt = value
-    persistSession()
-  },
-
   viewedArtworks: new PersistentSet<string>(DEMO_KEYS.viewedArtworks),
   enteredDates: new PersistentSet<IsoDate>(DEMO_KEYS.enteredDates),
 }
@@ -435,7 +423,7 @@ export function resetDb(): void {
   db.notices = seedNotices()
   db.settings = seedSettings()
   db.pushSubscriptions = []
-  sessionState = { currentUserId: null, mediaSessionExpiresAt: null }
+  sessionState = { currentUserId: null }
   db.viewedArtworks = new PersistentSet<string>(DEMO_KEYS.viewedArtworks)
   db.enteredDates = new PersistentSet<IsoDate>(DEMO_KEYS.enteredDates)
   clearDemo()

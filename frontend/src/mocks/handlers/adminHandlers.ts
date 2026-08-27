@@ -15,6 +15,7 @@ import type {
 import { ARTWORK_COUNT, CALENDAR_DEFAULT_DAYS, MEMBER_PAGE_SIZE } from '@/shared/config/constants'
 import { dateSeries } from '@/shared/lib/date'
 import { normalizePhone } from '@/shared/lib/phone'
+import type { ImageStatus } from '@/shared/types/enums'
 import type { IsoDate, Uuid } from '@/shared/types/utility'
 
 import {
@@ -344,7 +345,7 @@ export async function reorderArtworks(
   return mockDelay({ slots: exhibition.slots.map(toAdminSlot) }, 300)
 }
 
-/** `POST /admin/exhibitions/{date}/artworks/upload-urls` — Presigned URL 배치 발급 */
+/** `POST /admin/exhibitions/{date}/artworks/upload-urls` — presigned POST 자격 배치 발급 */
 export async function requestUploadUrls(
   date: IsoDate,
   files: { position: number; filename: string; contentType: string; sizeBytes: number; objectUrl?: string }[],
@@ -353,8 +354,8 @@ export async function requestUploadUrls(
     position: number
     artwork_id: Uuid
     upload_url: string
-    method: 'PUT'
-    headers: Record<string, string>
+    method: 'POST'
+    fields: Record<string, string>
     object_key: string
     expires_at: string
   }[]
@@ -374,8 +375,8 @@ export async function requestUploadUrls(
       position: file.position,
       artwork_id: artworkId,
       upload_url: `mock://upload/${date}/${file.position}`,
-      method: 'PUT' as const,
-      headers: { 'Content-Type': file.contentType },
+      method: 'POST' as const,
+      fields: { key: `artworks/${date}/${file.position}`, 'Content-Type': file.contentType },
       object_key: `artworks/${date}/${file.position}`,
       expires_at: new Date(Date.now() + 15 * 60_000).toISOString(),
     }
@@ -387,13 +388,12 @@ export async function requestUploadUrls(
 
 /**
  * `POST /admin/artworks/{id}/image/complete`
- * 처리 파이프라인을 흉내 낸다: `processing` → 2.4초 뒤 `ready`.
- * 화면의 폴링 규약(2초 간격)이 데모에서도 그대로 관찰된다.
+ * 서버가 **요청 안에서 동기로** 변환을 끝내고 결과 상태로 응답한다(API 문서 §9.9).
+ * 지연은 변환 시간을 흉내 낸 것이며, 응답이 곧 완료 통지다.
  */
 export async function completeImageUpload(artworkId: Uuid): Promise<{
   artwork_id: Uuid
-  image_status: 'processing' | 'ready'
-  estimated_ready_in_seconds: number
+  image_status: ImageStatus
 }> {
   requireCurator()
   const found = findArtwork(artworkId)
@@ -401,19 +401,16 @@ export async function completeImageUpload(artworkId: Uuid): Promise<{
 
   const { slot, exhibition } = found
   if (slot.imageStatus === 'ready') {
-    return mockDelay({ artwork_id: artworkId, image_status: 'ready', estimated_ready_in_seconds: 0 }, 120)
+    return mockDelay({ artwork_id: artworkId, image_status: 'ready' as const }, 120)
   }
 
-  slot.imageStatus = 'processing'
-  window.setTimeout(() => {
-    slot.imageStatus = 'ready'
-    if (slot.imageSeed === null && !slot.imageObjectUrl) {
-      slot.imageSeed = Math.floor(Math.random() * 120)
-    }
-    reevaluatePublish(exhibition)
-  }, 2400)
+  slot.imageStatus = 'ready'
+  if (slot.imageSeed === null && !slot.imageObjectUrl) {
+    slot.imageSeed = Math.floor(Math.random() * 120)
+  }
+  reevaluatePublish(exhibition)
 
-  return mockDelay({ artwork_id: artworkId, image_status: 'processing', estimated_ready_in_seconds: 3 }, 160)
+  return mockDelay({ artwork_id: artworkId, image_status: 'ready' as const }, 900)
 }
 
 /** `POST /admin/exhibitions/{date}/hide` · `/unhide` */

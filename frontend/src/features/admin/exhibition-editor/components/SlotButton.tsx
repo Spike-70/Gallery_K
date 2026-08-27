@@ -5,12 +5,12 @@ import type { AdminSlot } from '@/entities/exhibition/model/admin'
 import { slotVisualState } from '@/entities/exhibition/model/admin'
 import { actions, landmarks, screens } from '@/shared/config/messages'
 import { cn } from '@/shared/lib/cn'
-import { Icon, ProgressRing, Spinner } from '@/shared/ui'
+import { Icon, ProgressRing } from '@/shared/ui'
 
 /**
  * SlotButton — 디자인 시스템 문서 §8.3
  *
- * **시각 상태 6종**: `empty` / `uploading` / `processing` / `ready·미완성` /
+ * **시각 상태 5종**: `empty` / `uploading` / `ready·미완성` /
  * `ready·완성` / `failed`. 서버 `image_status` 5종에 메타데이터 완성 여부가 곱해진다(S-9).
  *
  * 미완성은 **점과 `N`을 함께** 쓴다. 점만 두면 색 단독 표기가 되어 DS-5를 어긴다.
@@ -51,7 +51,7 @@ function SlotSurface({
           src={slot.image.thumbUrl}
           alt=""
           draggable={false}
-          className={cn('h-full w-full object-cover', state === 'processing' && 'blur-sm')}
+          className="h-full w-full object-cover"
         />
       ) : null}
 
@@ -66,13 +66,6 @@ function SlotSurface({
         <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-surface/80">
           <ProgressRing value={progress ?? null} size="md" label={screens.editor.slotUploading} />
           <span className="text-caption text-tertiary">{screens.editor.slotUploading}</span>
-        </span>
-      ) : null}
-
-      {state === 'processing' ? (
-        <span className="absolute inset-0 flex flex-col items-center justify-center gap-1">
-          <Spinner size="md" />
-          <span className="text-caption text-tertiary">{screens.editor.slotProcessing}</span>
         </span>
       ) : null}
 

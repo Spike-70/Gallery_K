@@ -33,7 +33,7 @@ function useSessionSuccess() {
 
   return (user: Parameters<typeof setAuthenticated>[0]) => {
     resetSessionLostGuard()
-    setAuthenticated(user, null)
+    setAuthenticated(user)
     void queryClient.invalidateQueries({ queryKey: sessionKeys.all })
   }
 }

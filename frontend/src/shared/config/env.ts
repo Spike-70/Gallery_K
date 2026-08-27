@@ -43,7 +43,7 @@ function toBoolean(value: string | undefined, fallback: boolean): boolean {
 const rawAppEnv = (import.meta.env.VITE_APP_ENV ?? 'dev') as AppEnv
 
 export const env: Env = {
-  apiBaseUrl: required('VITE_API_BASE_URL', import.meta.env.VITE_API_BASE_URL ?? '/api/v1'),
+  apiBaseUrl: required('VITE_API_BASE_URL', import.meta.env.VITE_API_BASE_URL ?? '/api'),
   appEnv: rawAppEnv,
   vapidPublicKey: optional(import.meta.env.VITE_VAPID_PUBLIC_KEY),
   // 데모 단계의 기본값은 true다. 백엔드 연동 시 false로 바꾼다.

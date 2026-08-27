@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
 import type { ImageSet } from '@/entities/artwork/model/types'
-import { reportImageFailure, reportImageSuccess } from '@/entities/session/model/mediaRecovery'
+import { reportImageFailure, reportImageSuccess } from '@/entities/artwork/model/imageRecovery'
 import { actions, status } from '@/shared/config/messages'
 import { cn } from '@/shared/lib/cn'
 import { Button } from '@/shared/ui/Button'

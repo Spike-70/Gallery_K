@@ -24,6 +24,5 @@ export function toSession(raw: RawSession): Session {
   return {
     isAuthenticated: raw.is_authenticated,
     user: raw.user ? toSessionUser(raw.user) : null,
-    mediaSessionExpiresAt: raw.media_session_expires_at,
   }
 }

@@ -83,13 +83,13 @@ const exhibitionCache = new NetworkFirst({
 /** `/exhibitions/current`와 `/exhibitions/{date}`. 아카이브 목록(`/exhibitions?…`)은 제외한다. */
 registerRoute(
   ({ url, request }) =>
-    request.method === 'GET' && /\/api\/v1\/exhibitions\/[^/]+$/.test(url.pathname),
+    request.method === 'GET' && /\/api\/exhibitions\/[^/]+$/.test(url.pathname),
   exhibitionCache,
 )
 
 /** 첫 화면 — 데이터가 없어도 화면은 떠야 하므로 더 짧게 기다린다(FA-7). */
 registerRoute(
-  ({ url, request }) => request.method === 'GET' && url.pathname.endsWith('/api/v1/public/landing'),
+  ({ url, request }) => request.method === 'GET' && url.pathname.endsWith('/api/public/landing'),
   new NetworkFirst({
     cacheName: 'gk-landing',
     networkTimeoutSeconds: 2,

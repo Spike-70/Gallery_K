@@ -28,11 +28,11 @@ export const ARTWORK_VIEW_DWELL_MS = 1500
 /** 자동 저장 디바운스(ms) — UX 문서 §3.12 */
 export const AUTOSAVE_DEBOUNCE_MS = 1200
 
-/** 이미지 처리 폴링 (API 문서 §9.9) */
-export const IMAGE_POLL_INTERVAL_MS = 2000
-export const IMAGE_POLL_TIMEOUT_MS = 60000
-
-/** 업로드 동시 실행 수 (API 문서 §11.2) */
+/**
+ * 업로드 동시 실행 수 (API 문서 §11.2)
+ *
+ * 이미지 처리는 완료 통지 요청 안에서 동기로 끝나므로 폴링 상수가 없다(API 문서 §9.9).
+ */
 export const UPLOAD_CONCURRENCY = 3
 
 /** 업로드 제한 (API 문서 §9.8) */

@@ -14,14 +14,6 @@ import { mustChangePassword, requireMember, toSessionUser } from '@/mocks/lib/se
  * 모두 `AUTH_INVALID_CREDENTIALS`로 동일하게 응답한다.
  */
 
-const MEDIA_SESSION_HOURS = 6
-
-function issueMediaSession(): string {
-  const expires = new Date(Date.now() + MEDIA_SESSION_HOURS * 3600_000).toISOString()
-  db.mediaSessionExpiresAt = expires
-  return expires
-}
-
 function findByPhone(phone: string): MockMember | undefined {
   const normalized = normalizePhone(phone)
   return db.members.find((member) => member.phone === normalized)
@@ -35,7 +27,6 @@ export async function login(input: { phone: string; password: string }): Promise
     mockFail(ERROR_CODES.authInvalidCredentials, 401)
   }
   db.currentUserId = member.id
-  issueMediaSession()
   return { user: toSessionUser(member) }
 }
 
@@ -77,7 +68,6 @@ export async function signup(input: {
   }
   db.members.push(member)
   db.currentUserId = member.id
-  issueMediaSession()
 
   return { user: toSessionUser(member), is_first_login: true }
 }
@@ -86,7 +76,6 @@ export async function signup(input: {
 export async function logout(): Promise<Record<string, never>> {
   await mockDelay(null, 160)
   db.currentUserId = null
-  db.mediaSessionExpiresAt = null
   return {}
 }
 
@@ -97,7 +86,6 @@ export function getSession(): Promise<RawSession> {
     {
       is_authenticated: Boolean(member),
       user: member ? toSessionUser(member) : null,
-      media_session_expires_at: member ? (db.mediaSessionExpiresAt ?? issueMediaSession()) : null,
     },
     180,
   )
@@ -142,8 +130,3 @@ export async function confirmPasswordReset(input: {
   return {}
 }
 
-/** `POST /media/session` — CloudFront 서명 쿠키 발급 */
-export function createMediaSession(): Promise<{ expires_at: string; resource_prefix: string }> {
-  requireMember()
-  return mockDelay({ expires_at: issueMediaSession(), resource_prefix: '/media/artworks/' }, 140)
-}

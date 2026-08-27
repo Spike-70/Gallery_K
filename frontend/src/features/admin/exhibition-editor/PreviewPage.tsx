@@ -42,7 +42,7 @@ export function PreviewPage() {
 
   const query = useExhibitionPreviewQuery(date)
   // 그림 본문(설명·연도·출처)은 미리보기 응답에 없다. 편집 중인 원고에서 가져온다.
-  const draftQuery = useAdminExhibitionQuery(date, { polling: false })
+  const draftQuery = useAdminExhibitionQuery(date)
 
   /** 관람자가 볼 그림 한 점 — 미리보기 이미지 + 편집 중 원고를 합친다. */
   const artwork = useMemo<ArtworkDetail | null>(() => {

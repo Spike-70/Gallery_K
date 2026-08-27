@@ -10,7 +10,7 @@ import { renderWithProviders } from '@/test/utils/renderWithProviders'
 describe('A-1. 로그인', () => {
   beforeEach(() => {
     resetDb()
-    useSessionStore.setState({ status: 'anonymous', user: null, mediaExpiresAt: null })
+    useSessionStore.setState({ status: 'anonymous', user: null })
   })
 
   it('전화번호는 입력 중 자동으로 하이픈이 붙는다', async () => {

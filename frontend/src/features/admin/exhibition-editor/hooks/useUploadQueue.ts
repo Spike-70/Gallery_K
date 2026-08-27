@@ -1,5 +1,7 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useState } from 'react'
 
+import { adminExhibitionKeys } from '@/entities/exhibition/api/adminKeys'
 import * as adminApi from '@/entities/exhibition/api/adminExhibitionApi'
 import type { AdminSlot } from '@/entities/exhibition/model/admin'
 import { ERROR_CODES } from '@/shared/api/ApiError'
@@ -16,16 +18,18 @@ import { toast } from '@/shared/ui'
  * 다중 업로드 — UX 설계서 §3.12, API 명세서 §11.2
  *
  * 1. 빈 슬롯에 **번호 순서대로** 배정한다. 파일이 더 많으면 초과분을 알리고 배정하지 않는다.
- * 2. Presigned URL을 배치 발급받는다.
- * 3. **동시 3개**씩 S3로 직접 PUT 한다(20MB는 API Gateway를 통과할 수 없다).
- * 4. 각 파일 완료 즉시 `image/complete`로 파이프라인을 앞당긴다.
- * 5. 처리 완료 순서와 무관하게 **슬롯 위치는 고정**된다.
+ * 2. presigned POST 자격을 배치 발급받는다.
+ * 3. **동시 3개**씩 S3로 직접 POST 한다(20MB는 API Gateway를 통과할 수 없다).
+ * 4. 각 파일 완료 즉시 `image/complete`를 부르면 서버가 **동기로** 변환을 끝내고 응답한다.
+ * 5. 전부 끝나면 편집 쿼리를 무효화한다. 폴링하지 않는다(API 문서 §9.9).
+ * 6. 처리 완료 순서와 무관하게 **슬롯 위치는 고정**된다.
  *
  * `httpClient` 밖에서 `fetch`를 쓰는 예외 모듈이다(프런트 §7.1).
  */
 export type UploadProgress = Record<number, number>
 
 export function useUploadQueue(date: IsoDate, slots: AdminSlot[] | undefined) {
+  const queryClient = useQueryClient()
   const [progress, setProgress] = useState<UploadProgress>({})
   const [running, setRunning] = useState(false)
 
@@ -82,7 +86,7 @@ export function useUploadQueue(date: IsoDate, slots: AdminSlot[] | undefined) {
             const ticket = tickets[index]
             const file = assigned[index]
             try {
-              await putToStorage(ticket.uploadUrl, ticket.headers, file, (value) =>
+              await postToStorage(ticket.uploadUrl, ticket.fields, file, (value) =>
                 setProgress((current) => ({ ...current, [ticket.position]: value })),
               )
               await adminApi.completeImageUpload(ticket.artworkId, ticket.objectKey)
@@ -100,6 +104,8 @@ export function useUploadQueue(date: IsoDate, slots: AdminSlot[] | undefined) {
         })
 
         await Promise.all(workers)
+        // 완료 통지 응답으로 처리가 끝나 있다. 최신 슬롯 상태를 한 번만 다시 받는다.
+        await queryClient.invalidateQueries({ queryKey: adminExhibitionKeys.exhibition(date) })
         toast.info(screens.editor.uploadDone(assigned.length))
       } catch (error) {
         toast.error(error instanceof ApiError ? error.message : resolveErrorMessage(error))
@@ -107,21 +113,22 @@ export function useUploadQueue(date: IsoDate, slots: AdminSlot[] | undefined) {
         setRunning(false)
       }
     },
-    [date, slots],
+    [date, slots, queryClient],
   )
 
   return { upload, progress, running }
 }
 
 /**
- * S3 직접 업로드. 진행률이 필요하므로 `XMLHttpRequest`를 쓴다 — `fetch`는 업로드
- * 진행률을 노출하지 않는다.
+ * S3 직접 업로드(presigned POST). 서명 필드를 **먼저** 담고 파일을 마지막에 붙인다 —
+ * S3는 `file` 이후의 필드를 무시한다.
  *
+ * 진행률이 필요하므로 `XMLHttpRequest`를 쓴다 — `fetch`는 업로드 진행률을 노출하지 않는다.
  * 데모에서는 `mock://` 스킴이라 실제 전송 없이 진행률만 흉내 낸다.
  */
-function putToStorage(
+function postToStorage(
   url: string,
-  headers: Record<string, string>,
+  fields: Record<string, string>,
   file: File,
   onProgress: (value: number) => void,
 ): Promise<void> {
@@ -140,10 +147,13 @@ function putToStorage(
     })
   }
 
+  const form = new FormData()
+  for (const [key, value] of Object.entries(fields)) form.append(key, value)
+  form.append('file', file)
+
   return new Promise((resolve, reject) => {
     const request = new XMLHttpRequest()
-    request.open('PUT', url)
-    for (const [key, value] of Object.entries(headers)) request.setRequestHeader(key, value)
+    request.open('POST', url)
     request.upload.addEventListener('progress', (event) => {
       if (event.lengthComputable) onProgress(Math.round((event.loaded / event.total) * 100))
     })
@@ -153,6 +163,6 @@ function putToStorage(
         : reject(new Error(`upload failed: ${request.status}`)),
     )
     request.addEventListener('error', () => reject(new Error('upload failed')))
-    request.send(file)
+    request.send(form)
   })
 }

@@ -5,7 +5,7 @@ import * as adminApi from '@/entities/exhibition/api/adminExhibitionApi'
 import { adminExhibitionKeys } from '@/entities/exhibition/api/adminKeys'
 import { exhibitionKeys } from '@/entities/exhibition/api/keys'
 import { CACHE_POLICY } from '@/shared/api/queryClient'
-import { CALENDAR_PAGE_SIZE, IMAGE_POLL_INTERVAL_MS } from '@/shared/config/constants'
+import { CALENDAR_PAGE_SIZE } from '@/shared/config/constants'
 import { shouldPrefetch } from '@/shared/lib/platform'
 import type { IsoDate } from '@/shared/types/utility'
 
@@ -56,27 +56,14 @@ export function usePastCalendarQuery(enabled: boolean) {
 
 /**
  * 편집 상태 조회.
- * 이미지가 `uploading`·`processing`인 동안에만 2초 간격으로 다시 조회한다(API 문서 §9.9).
- * 폴링 조건을 쿼리 자신이 갖고 있어야 화면이 조건을 재구현하지 않는다.
+ * 이미지 처리는 업로드 완료 통지 응답으로 끝나므로(API 문서 §9.9) **폴링하지 않는다.**
+ * 업로드가 끝나면 업로드 큐가 이 쿼리를 무효화한다.
  */
-export function useAdminExhibitionQuery(date: IsoDate | undefined, options: { polling?: boolean } = {}) {
-  const { polling = true } = options
+export function useAdminExhibitionQuery(date: IsoDate | undefined) {
   return useQuery({
     queryKey: adminExhibitionKeys.exhibition(date ?? ''),
     queryFn: () => adminApi.fetchAdminExhibition(date as IsoDate),
     enabled: Boolean(date),
-    /**
-     * **최대 60초까지만 폴링한다**(API 문서 §9.9). 그 뒤로도 계속 두드리면
-     * 지연을 알리지도 못한 채 배터리와 요청만 쓴다. 멈추는 시점 판단은
-     * `useSlotPolling`이 하고, 이 쿼리는 그 결정을 `polling`으로 받는다.
-     */
-    refetchInterval: (query) => {
-      if (!polling) return false
-      const pending = query.state.data?.slots.some(
-        (slot) => slot.imageStatus === 'processing' || slot.imageStatus === 'uploading',
-      )
-      return pending ? IMAGE_POLL_INTERVAL_MS : false
-    },
     ...CACHE_POLICY.admin,
   })
 }

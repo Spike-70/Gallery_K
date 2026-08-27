@@ -12,7 +12,7 @@ export type FontScale = (typeof FONT_SCALES)[number]
 export const CREATED_VIA = ['self', 'curator'] as const
 export type CreatedVia = (typeof CREATED_VIA)[number]
 
-export const IMAGE_STATUSES = ['empty', 'uploading', 'processing', 'ready', 'failed'] as const
+export const IMAGE_STATUSES = ['empty', 'uploading', 'ready', 'failed'] as const
 export type ImageStatus = (typeof IMAGE_STATUSES)[number]
 
 /** DB 컬럼이 아니라 관리자 달력 응답의 파생 상태(Y / ↑ / N) */

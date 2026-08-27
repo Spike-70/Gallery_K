@@ -206,7 +206,6 @@ export type RawLanding = {
 export type RawSession = {
   is_authenticated: boolean
   user: Nullable<RawSessionUser>
-  media_session_expires_at: Nullable<IsoDateTime>
 }
 
 /** §8.5 푸시 구독 */
