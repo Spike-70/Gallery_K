@@ -19,7 +19,7 @@ import { Button, Skeleton, TextLink } from '@/shared/ui'
  * 놓치지 않게 하기 위함이다(UX §4.2).
  */
 export function LandingPage() {
-  const { data } = useLanding()
+  const { data, isPending } = useLanding()
   const navigate = useNavigate()
   const sessionStatus = useSessionStore((state) => state.status)
 
@@ -39,23 +39,25 @@ export function LandingPage() {
         </div>
       ) : null}
 
+      {/*
+        조회에 **실패하면 그 자리를 비운다.** 스켈레톤을 계속 반짝이면 영원히 로딩 중인
+        화면이 되고, 오류 문구를 띄우면 사과가 된다 — 둘 다 UX §3.1이 금지한다.
+      */}
       <header className="flex flex-col items-center gap-2 pt-8">
-        {data ? (
-          <DateLine label={data.todayLabel} />
-        ) : (
-          <Skeleton className="h-4 w-32" />
-        )}
+        {data ? <DateLine label={data.todayLabel} /> : null}
+        {isPending ? <Skeleton className="h-4 w-1/3" /> : null}
+
         <h1 className="text-display text-primary">{brand.logo}</h1>
 
         {/* 전시 제목은 비회원에게도 노출한다 — 무엇을 얻는지 먼저 보여준다(PRD §5.1). */}
-        <div className="min-h-[2.5em] pt-2">
+        <div className="gk-slot-title pt-2">
           {data ? (
             <p className="text-center text-title-lg text-primary">
               {data.hasExhibition ? data.exhibitionTitle : screens.landing.firstExhibitionPending}
             </p>
-          ) : (
-            <Skeleton className="h-7 w-52" />
-          )}
+          ) : isPending ? (
+            <Skeleton className="h-8 w-2/3" />
+          ) : null}
         </div>
       </header>
 

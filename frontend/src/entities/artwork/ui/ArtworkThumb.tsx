@@ -18,6 +18,10 @@ export type ArtworkThumbProps = {
   to: string
   priority?: boolean
   onPrefetch?: () => void
+  /** 이미지가 실패한 칸에 재시도 수단을 준다. 나머지 칸은 정상 렌더된다(UX §3.6). */
+  onRetryImage?: () => void
+  /** 아직 올라오지 않은 자리의 문구(미리보기) */
+  pendingLabel?: string
 }
 
 export const ArtworkThumb = memo(function ArtworkThumb({
@@ -25,6 +29,8 @@ export const ArtworkThumb = memo(function ArtworkThumb({
   to,
   priority,
   onPrefetch,
+  onRetryImage,
+  pendingLabel,
 }: ArtworkThumbProps) {
   return (
     <Link
@@ -33,7 +39,14 @@ export const ArtworkThumb = memo(function ArtworkThumb({
       className={cn('group flex flex-col gap-1 focus-visible:outline-offset-4')}
     >
       <div className="relative">
-        <ArtworkImage image={artwork.image} alt={artworkAltText(artwork)} variant="thumb" priority={priority} />
+        <ArtworkImage
+          image={artwork.image}
+          alt={artworkAltText(artwork)}
+          variant="thumb"
+          priority={priority}
+          onRetry={onRetryImage}
+          pendingLabel={pendingLabel}
+        />
         {artwork.isViewed ? (
           <span
             aria-hidden

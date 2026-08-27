@@ -5,6 +5,7 @@ import { cn } from '@/shared/lib/cn'
  * 48×28px 트랙. 라벨을 좌측에 두고 **라벨 전체가 히트 영역**이다.
  */
 export type SwitchProps = {
+  ref?: React.Ref<HTMLButtonElement>
   checked: boolean
   onCheckedChange: (checked: boolean) => void
   label: string
@@ -13,9 +14,10 @@ export type SwitchProps = {
   className?: string
 }
 
-export function Switch({ checked, onCheckedChange, label, description, disabled, className }: SwitchProps) {
+export function Switch({ checked, onCheckedChange, label, description, disabled, className, ref }: SwitchProps) {
   return (
     <button
+      ref={ref}
       type="button"
       role="switch"
       aria-checked={checked}
@@ -36,7 +38,7 @@ export function Switch({ checked, onCheckedChange, label, description, disabled,
       <span
         aria-hidden
         className={cn(
-          'relative h-7 w-12 shrink-0 rounded-full transition-colors duration-fast ease-standard',
+          'relative h-switch-track w-12 shrink-0 rounded-full transition-colors duration-fast ease-standard',
           checked ? 'bg-action-primary' : 'bg-border-strong',
         )}
       >

@@ -36,14 +36,23 @@ export function SaveIndicator({ state, onRetry, className }: SaveIndicatorProps)
     )
   }
 
+  /**
+   * `저장 실패 · 다시 시도`가 **문구이자 동작**이다. 옆에 재시도 버튼을 또 두면
+   * "다시 시도"가 두 번 나온다. 표시 전체를 누를 수 있게 만들어 3상태 계약을 지킨다.
+   */
+  if (!onRetry) {
+    return (
+      <span className={cn('text-caption text-danger', className)} role="alert">
+        {status.saveFailed}
+      </span>
+    )
+  }
+
   return (
-    <span className={cn('flex items-center gap-2 text-caption text-danger', className)} role="alert">
-      {status.saveFailed}
-      {onRetry ? (
-        <TextButton tone="danger" onClick={onRetry}>
-          다시 시도
-        </TextButton>
-      ) : null}
+    <span role="alert" className={cn('inline-flex', className)}>
+      <TextButton tone="danger" className="text-caption" onClick={onRetry}>
+        {status.saveFailed}
+      </TextButton>
     </span>
   )
 }

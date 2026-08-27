@@ -11,6 +11,7 @@ import { toIsoDate } from '@/shared/lib/date'
 import type { IsoDate, Uuid } from '@/shared/types/utility'
 
 import { ARTWORK_SEEDS, PAST_EXHIBITION_SEEDS } from '@/mocks/data/artworkSeeds'
+import { DEMO_KEYS, PersistentSet, clearDemo, readDemo, writeDemo } from '@/mocks/lib/demoStorage'
 
 /**
  * 인메모리 목 DB — 데모 전용
@@ -243,6 +244,23 @@ type MockDb = {
   mediaSessionExpiresAt: string | null
 }
 
+/**
+ * 세션만 브라우저에 남긴다 — 새로고침해도 로그인이 유지되어야 90일 자동 로그인(GAP-14)을
+ * 데모에서 보여줄 수 있다. 전시 원고·업로드는 일부러 남기지 않는다(`demoStorage.ts` 참조).
+ */
+type DemoSession = { currentUserId: Uuid | null; mediaSessionExpiresAt: string | null }
+
+const restoredSession = readDemo<DemoSession>(DEMO_KEYS.session, {
+  currentUserId: null,
+  mediaSessionExpiresAt: null,
+})
+
+let sessionState: DemoSession = { ...restoredSession }
+
+function persistSession(): void {
+  writeDemo(DEMO_KEYS.session, sessionState)
+}
+
 export const db: MockDb = {
   today: TODAY,
   exhibitions: seedExhibitions(),
@@ -250,10 +268,28 @@ export const db: MockDb = {
   notices: seedNotices(),
   settings: seedSettings(),
   pushSubscriptions: [],
-  currentUserId: null,
-  viewedArtworks: new Set(),
-  enteredDates: new Set(),
-  mediaSessionExpiresAt: null,
+
+  /**
+   * 핸들러는 평소처럼 `db.currentUserId = ...` 로 쓴다.
+   * 접근자가 보존을 대신 처리하므로 **핸들러에는 데모 전용 코드가 한 줄도 들어가지 않는다.**
+   */
+  get currentUserId() {
+    return sessionState.currentUserId
+  },
+  set currentUserId(value: Uuid | null) {
+    sessionState.currentUserId = value
+    persistSession()
+  },
+  get mediaSessionExpiresAt() {
+    return sessionState.mediaSessionExpiresAt
+  },
+  set mediaSessionExpiresAt(value: string | null) {
+    sessionState.mediaSessionExpiresAt = value
+    persistSession()
+  },
+
+  viewedArtworks: new PersistentSet<string>(DEMO_KEYS.viewedArtworks),
+  enteredDates: new PersistentSet<IsoDate>(DEMO_KEYS.enteredDates),
 }
 
 /** 데모 로그인 계정 — 로그인 화면의 안내 카드가 참조한다. */
@@ -399,10 +435,10 @@ export function resetDb(): void {
   db.notices = seedNotices()
   db.settings = seedSettings()
   db.pushSubscriptions = []
-  db.currentUserId = null
-  db.viewedArtworks = new Set()
-  db.enteredDates = new Set()
-  db.mediaSessionExpiresAt = null
+  sessionState = { currentUserId: null, mediaSessionExpiresAt: null }
+  db.viewedArtworks = new PersistentSet<string>(DEMO_KEYS.viewedArtworks)
+  db.enteredDates = new PersistentSet<IsoDate>(DEMO_KEYS.enteredDates)
+  clearDemo()
 }
 
 export { emptySlot, filledSlot, nowIso, shiftDate, TODAY_BASE, uuid }

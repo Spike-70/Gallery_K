@@ -1,4 +1,4 @@
-import { actions } from '@/shared/config/messages'
+import { actions, landmarks } from '@/shared/config/messages'
 import { paths } from '@/shared/config/paths'
 import { TextLink } from '@/shared/ui'
 
@@ -8,7 +8,7 @@ import { TextLink } from '@/shared/ui'
  */
 export function GalleryFooterNav() {
   return (
-    <nav className="flex flex-col items-center gap-2 py-8" aria-label="갤러리 이동">
+    <nav className="flex flex-col items-center gap-2 py-8" aria-label={landmarks.galleryNav}>
       <TextLink to={paths.archive}>{actions.archive}</TextLink>
       <TextLink to={paths.settings}>{actions.settings}</TextLink>
       <TextLink to={paths.landing} tone="tertiary">

@@ -16,6 +16,14 @@ export type PushPermissionPromptProps = {
   onDone: () => void
 }
 
+/**
+ * 이미 한 번 물어봤는가. `나중에`를 누른 사람에게 **다시 묻지 않기 위해** 쓴다(UX §3.3).
+ * 이 판단은 프롬프트를 띄우려는 쪽이 한다.
+ */
+export function hasAskedNotifyPermission(): boolean {
+  return localStore.get(STORAGE_KEYS.notifyPromptSeen) === '1'
+}
+
 export function PushPermissionPrompt({ onDone }: PushPermissionPromptProps) {
   const { enable, pending } = usePushSubscription()
   const [showIosGuide, setShowIosGuide] = useState(false)

@@ -1,10 +1,12 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useCallback } from 'react'
 
 import * as adminApi from '@/entities/exhibition/api/adminExhibitionApi'
 import { adminExhibitionKeys } from '@/entities/exhibition/api/adminKeys'
 import { exhibitionKeys } from '@/entities/exhibition/api/keys'
 import { CACHE_POLICY } from '@/shared/api/queryClient'
-import { IMAGE_POLL_INTERVAL_MS } from '@/shared/config/constants'
+import { CALENDAR_PAGE_SIZE, IMAGE_POLL_INTERVAL_MS } from '@/shared/config/constants'
+import { shouldPrefetch } from '@/shared/lib/platform'
 import type { IsoDate } from '@/shared/types/utility'
 
 /**
@@ -21,7 +23,15 @@ export function useAdminSummaryQuery() {
   })
 }
 
-/** 오늘을 맨 위로 하는 7일치. 아래로 스크롤하면 미래 30일씩 이어 받는다(API 문서 §9.2). */
+/**
+ * 달력 — API 문서 §9.2
+ *
+ * **두 방향은 커서 공간이 서로 다르다.** 한 무한 쿼리에 섞으면 `next_cursor`가
+ * 어느 방향의 것인지 알 수 없어진다. 그래서 방향마다 쿼리를 따로 둔다.
+ *
+ * - `future`: 오늘을 맨 위로 하는 7일치. 아래로 스크롤하면 30일씩 이어 받는다.
+ * - `past`: 위로 스크롤할 때만 켜진다. **과거 전시 수정 경로가 이 쿼리다**(PRD GAP-7).
+ */
 export function useCalendarQuery() {
   return useInfiniteQuery({
     queryKey: adminExhibitionKeys.calendar({ direction: 'future' }),
@@ -32,17 +42,36 @@ export function useCalendarQuery() {
   })
 }
 
+export function usePastCalendarQuery(enabled: boolean) {
+  return useInfiniteQuery({
+    queryKey: adminExhibitionKeys.calendar({ direction: 'past' }),
+    queryFn: ({ pageParam }) =>
+      adminApi.fetchCalendar({ direction: 'past', cursor: pageParam, limit: CALENDAR_PAGE_SIZE }),
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    enabled,
+    ...CACHE_POLICY.admin,
+  })
+}
+
 /**
  * 편집 상태 조회.
  * 이미지가 `uploading`·`processing`인 동안에만 2초 간격으로 다시 조회한다(API 문서 §9.9).
  * 폴링 조건을 쿼리 자신이 갖고 있어야 화면이 조건을 재구현하지 않는다.
  */
-export function useAdminExhibitionQuery(date: IsoDate | undefined) {
+export function useAdminExhibitionQuery(date: IsoDate | undefined, options: { polling?: boolean } = {}) {
+  const { polling = true } = options
   return useQuery({
     queryKey: adminExhibitionKeys.exhibition(date ?? ''),
     queryFn: () => adminApi.fetchAdminExhibition(date as IsoDate),
     enabled: Boolean(date),
+    /**
+     * **최대 60초까지만 폴링한다**(API 문서 §9.9). 그 뒤로도 계속 두드리면
+     * 지연을 알리지도 못한 채 배터리와 요청만 쓴다. 멈추는 시점 판단은
+     * `useSlotPolling`이 하고, 이 쿼리는 그 결정을 `polling`으로 받는다.
+     */
     refetchInterval: (query) => {
+      if (!polling) return false
       const pending = query.state.data?.slots.some(
         (slot) => slot.imageStatus === 'processing' || slot.imageStatus === 'uploading',
       )
@@ -50,6 +79,22 @@ export function useAdminExhibitionQuery(date: IsoDate | undefined) {
     },
     ...CACHE_POLICY.admin,
   })
+}
+
+/** `/admin` 진입 시 오늘 칸을 미리 받아 둔다 — 데이터 절약 모드에서는 하지 않는다(§9.4). */
+export function usePrefetchAdminExhibition() {
+  const queryClient = useQueryClient()
+  return useCallback(
+    (date: IsoDate) => {
+      if (!shouldPrefetch()) return
+      void queryClient.prefetchQuery({
+        queryKey: adminExhibitionKeys.exhibition(date),
+        queryFn: () => adminApi.fetchAdminExhibition(date),
+        ...CACHE_POLICY.admin,
+      })
+    },
+    [queryClient],
+  )
 }
 
 export function useExhibitionPreviewQuery(date: IsoDate | undefined) {
@@ -124,6 +169,13 @@ export function useCarryDraftMutation() {
   return useMutation({ mutationFn: adminApi.carryDraft, onSuccess: invalidate })
 }
 
+/**
+ * 전시 숨김·숨김 해제 — PRD §6.9
+ *
+ * **되돌리기 어려운 조작이므로 낙관적 반영을 하지 않는다**(프런트 §6.4).
+ * 숨기면 아카이브에서 빠지고, 현재 걸려 있던 전시였다면 직전 전시가 대신 연장되므로
+ * 관람자 캐시까지 함께 무효화한다.
+ */
 export function useSetExhibitionHiddenMutation() {
   const invalidate = useInvalidateAdmin()
   return useMutation({

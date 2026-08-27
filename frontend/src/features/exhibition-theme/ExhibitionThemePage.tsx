@@ -28,15 +28,20 @@ export function ExhibitionThemePage() {
   if (query.isPending) {
     return (
       <div className="gk-container-reading flex flex-col items-center gap-4">
-        <Skeleton className="h-4 w-32" />
-        <Skeleton className="h-7 w-48" />
+        <Skeleton className="h-4 w-1/3" />
+        <Skeleton className="h-8 w-2/3" />
         <Skeleton className="mt-4 h-4 w-full" lines={6} />
       </div>
     )
   }
 
   if (query.isError || !query.data) {
-    return <ErrorState message={resolveErrorMessage(query.error)} onRetry={() => void query.refetch()} />
+    return (
+      <>
+        <ErrorState message={resolveErrorMessage(query.error)} onRetry={() => void query.refetch()} />
+        <BackLink to={context.galleryPath} label={context.backToGalleryLabel} />
+      </>
+    )
   }
 
   const exhibition = query.data

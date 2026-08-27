@@ -17,6 +17,27 @@ if (!window.matchMedia) {
   })) as typeof window.matchMedia
 }
 
+if (!window.localStorage) {
+  // 이 jsdom 구성에는 웹 스토리지가 없다. 제품 코드는 안전 래퍼로 없어도 동작하지만
+  // (`shared/lib/storage.ts`), 보존 자체를 검증하려면 실물이 필요하다.
+  const createStorageStub = (): Storage => {
+    const entries = new Map<string, string>()
+    return {
+      get length() {
+        return entries.size
+      },
+      key: (index: number) => [...entries.keys()][index] ?? null,
+      getItem: (key: string) => entries.get(key) ?? null,
+      setItem: (key: string, value: string) => void entries.set(key, String(value)),
+      removeItem: (key: string) => void entries.delete(key),
+      clear: () => entries.clear(),
+    } as Storage
+  }
+
+  Object.defineProperty(window, 'localStorage', { value: createStorageStub(), configurable: true })
+  Object.defineProperty(window, 'sessionStorage', { value: createStorageStub(), configurable: true })
+}
+
 if (!window.requestIdleCallback) {
   window.requestIdleCallback = ((callback: () => void) => window.setTimeout(callback, 0)) as never
   window.cancelIdleCallback = ((id: number) => window.clearTimeout(id)) as never

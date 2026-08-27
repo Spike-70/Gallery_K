@@ -3,14 +3,16 @@ import { Icon } from '@/shared/ui/Icon'
 
 /** FilterChip — 목록 필터 토글(§8.1). 선택 시 accent 배경 + 체크. 히트 영역 48px. */
 export type FilterChipProps = {
+  ref?: React.Ref<HTMLButtonElement>
   label: string
   selected: boolean
   onSelect: () => void
 }
 
-export function FilterChip({ label, selected, onSelect }: FilterChipProps) {
+export function FilterChip({ label, selected, onSelect, ref }: FilterChipProps) {
   return (
     <button
+      ref={ref}
       type="button"
       aria-pressed={selected}
       onClick={onSelect}

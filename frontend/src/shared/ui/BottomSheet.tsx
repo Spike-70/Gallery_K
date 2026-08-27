@@ -50,7 +50,7 @@ export function BottomSheet({ open, title, onClose, children }: BottomSheetProps
         role="dialog"
         aria-modal="true"
         aria-labelledby="gk-sheet-title"
-        className="relative max-h-[80vh] w-full max-w-gallery overflow-y-auto rounded-t-lg bg-surface pb-6 shadow-sheet animate-sheet-in"
+        className="relative max-h-sheet w-full max-w-gallery overflow-y-auto rounded-t-lg bg-surface pb-6 shadow-sheet animate-sheet-in"
         style={{
           // 손가락 이동을 그대로 따라간다(§6 규칙 4).
           transform: offset.y ? `translateY(${offset.y}px)` : undefined,

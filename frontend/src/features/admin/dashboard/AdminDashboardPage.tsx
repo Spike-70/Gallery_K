@@ -1,14 +1,13 @@
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 
 import { useAdminSummaryQuery } from '@/entities/exhibition/api/adminQueries'
 import { DayRow } from '@/features/admin/dashboard/components/DayRow'
 import { SummaryStats } from '@/features/admin/dashboard/components/SummaryStats'
 import { useCalendar } from '@/features/admin/dashboard/hooks/useCalendar'
-import { ARTWORK_COUNT } from '@/shared/config/constants'
-import { actions, screens } from '@/shared/config/messages'
+import { actions, landmarks, screens } from '@/shared/config/messages'
 import { paths } from '@/shared/config/paths'
 import { useIntersection } from '@/shared/hooks/useIntersection'
-import { formatShortDate } from '@/shared/lib/date'
+import { formatMonthDay } from '@/shared/lib/date'
 import { AlertDialog, BackLink, Dialog, ErrorState, Skeleton, TextLink } from '@/shared/ui'
 import { resolveErrorMessage } from '@/shared/api/errorMessages'
 
@@ -21,14 +20,18 @@ import { resolveErrorMessage } from '@/shared/api/errorMessages'
 export function AdminDashboardPage() {
   const summaryQuery = useAdminSummaryQuery()
   const calendar = useCalendar()
-  const sentinelRef = useRef<HTMLDivElement>(null)
-  const reachedEnd = useIntersection(sentinelRef)
 
+  // 아래로는 미래, 위로는 과거 — 양쪽 끝에 감시자를 둔다(UX §3.11).
+  const { ref: topSentinelRef, intersecting: reachedTop } = useIntersection()
+  const { ref: bottomSentinelRef, intersecting: reachedEnd } = useIntersection()
+
+  const { loadPast, loadFuture } = calendar
   useEffect(() => {
-    if (reachedEnd && calendar.query.hasNextPage && !calendar.query.isFetchingNextPage) {
-      void calendar.query.fetchNextPage()
-    }
-  }, [reachedEnd, calendar.query])
+    if (reachedEnd) loadFuture()
+  }, [reachedEnd, loadFuture])
+  useEffect(() => {
+    if (reachedTop) loadPast()
+  }, [reachedTop, loadPast])
 
   const target = calendar.carryTarget
 
@@ -36,7 +39,7 @@ export function AdminDashboardPage() {
     <>
       <SummaryStats summary={summaryQuery.data} isLoading={summaryQuery.isPending} />
 
-      <nav className="flex gap-4 py-4" aria-label="관리 메뉴">
+      <nav className="flex gap-4 py-4" aria-label={landmarks.adminNav}>
         <TextLink to={paths.adminStats}>{screens.admin.statsLink}</TextLink>
         <TextLink to={paths.adminMembers}>{screens.admin.membersLink}</TextLink>
         <TextLink to={paths.adminSettings}>{screens.admin.settingsLink}</TextLink>
@@ -45,7 +48,7 @@ export function AdminDashboardPage() {
       {calendar.query.isPending ? (
         <div className="flex flex-col gap-2">
           {Array.from({ length: 7 }, (_, index) => (
-            <Skeleton key={index} className="h-14 w-full" />
+            <Skeleton key={index} className="h-control-lg w-full" />
           ))}
         </div>
       ) : calendar.query.isError ? (
@@ -54,27 +57,34 @@ export function AdminDashboardPage() {
           onRetry={() => void calendar.query.refetch()}
         />
       ) : (
-        <ul className="list-none p-0">
-          {calendar.days.map((day) => (
-            <DayRow key={day.date} day={day} onCarryDraft={calendar.setCarryTarget} />
-          ))}
-        </ul>
+        <>
+          {/* 위쪽 감시자 — 과거 30일을 이어 받는다(PRD GAP-7). */}
+          {calendar.hasMorePast ? <div ref={topSentinelRef} className="py-2" /> : null}
+          {calendar.loadingPast ? <Skeleton className="h-control-lg w-full" /> : null}
+
+          <ul className="list-none p-0">
+            {calendar.days.map((day) => (
+              <DayRow key={day.date} day={day} onCarryDraft={calendar.setCarryTarget} />
+            ))}
+          </ul>
+        </>
       )}
 
-      <div ref={sentinelRef} className="py-4" />
+      <div ref={bottomSentinelRef} className="py-4" />
 
       <BackLink to={paths.landing} label={actions.backHome} />
 
       {/* 이어쓰기 확인 — 이동이지 복사가 아니다. 원본 날짜는 비워진다. */}
       <Dialog
         open={Boolean(target)}
-        title={target ? screens.admin.carryDialogTitle(formatShortDate(target.date)) : ''}
+        title={target ? screens.admin.carryDialogTitle(formatMonthDay(target.date)) : ''}
         description={
           target
-            ? screens.admin.carryDialogBody(
-                target.draftProgress.artworkCount || ARTWORK_COUNT,
-                formatShortDate(target.date),
-                calendar.days.find((day) => day.isToday)?.date ?? '',
+            ? // 문구는 `8월 31일` 꼴이다(UX §3.11 예시). `08.31 일`이 아니다.
+              screens.admin.carryDialogBody(
+                target.draftProgress.artworkCount,
+                formatMonthDay(target.date),
+                calendar.todayDate ? formatMonthDay(calendar.todayDate) : '',
               )
             : undefined
         }

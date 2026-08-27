@@ -12,16 +12,18 @@ import { Icon } from '@/shared/ui/Icon'
  * 미러이며 `shared/types/enums`에 있다. 도메인 객체를 받지는 않는다(프런트 §4.3).
  */
 export type StatusChipProps = {
+  ref?: React.Ref<HTMLSpanElement>
   status: ExhibitionDayStatus
   /** `carried_over`일 때 `↑ 08.30`의 날짜 부분 */
   carriedFromLabel?: string | null
   className?: string
 }
 
-export function StatusChip({ status, carriedFromLabel, className }: StatusChipProps) {
+export function StatusChip({ status, carriedFromLabel, className, ref }: StatusChipProps) {
   if (status === 'published') {
     return (
-      <span className={cn('inline-flex items-center gap-1 text-label text-published', className)}>
+      <span
+        ref={ref} className={cn('inline-flex items-center gap-1 text-label text-published', className)}>
         <Icon name="check" size="sm" className="h-4 w-4" />Y
       </span>
     )

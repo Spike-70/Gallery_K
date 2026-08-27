@@ -1,4 +1,5 @@
 import { Controller } from 'react-hook-form'
+import { useLocation } from 'react-router-dom'
 
 import { paths } from '@/shared/config/paths'
 import { DemoAccountsNotice } from '@/features/auth/components/DemoAccountsNotice'
@@ -11,13 +12,22 @@ import { BackLink, Button, TextLink } from '@/shared/ui'
 
 /** A-1. 로그인 — UX 설계서 §3.2 */
 export function LoginPage() {
-  const { form, submit, bannerMessage, isSubmitting } = useLogin()
+  const { form, submit, bannerMessage, canSubmit, isSubmitting } = useLogin()
   const { control, register, formState } = form
+
+  /**
+   * 비밀번호 재설정을 마치고 넘어오면 그 사실을 **배너로** 알린다(UX §3.4).
+   * 토스트는 4초 뒤 사라져 "왜 여기 왔는지"를 잃는다.
+   */
+  const notice = (useLocation().state as { banner?: string } | null)?.banner ?? null
 
   return (
     <div className="gk-container-form flex min-h-screen flex-col justify-center py-12">
       <h1 className="mb-8 text-center text-title-md text-primary">{screenTitles.login}</h1>
 
+      {notice && !bannerMessage ? (
+        <FormBanner tone="info" message={notice} className="mb-4" />
+      ) : null}
       {bannerMessage ? <FormBanner message={bannerMessage} className="mb-4" /> : null}
 
       <form onSubmit={submit} noValidate className="flex flex-col gap-5">
@@ -44,7 +54,7 @@ export function LoginPage() {
           {...register('password')}
         />
 
-        <Button type="submit" size="lg" block loading={isSubmitting}>
+        <Button type="submit" size="lg" block loading={isSubmitting} disabled={!canSubmit}>
           {actions.login}
         </Button>
       </form>

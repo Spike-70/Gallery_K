@@ -60,7 +60,7 @@ export function DayRow({ day, onCarryDraft }: DayRowProps) {
         )}
       </div>
 
-      <div className="flex min-w-[72px] flex-col items-end gap-1">
+      <div className="flex min-w-row flex-col items-end gap-1">
         <StatusChip status={day.status} carriedFromLabel={carriedLabel} />
         {/* 진행률은 `N`이고 드래프트가 있을 때만. 주말에 미리 채워둔 상황이 한눈에 보인다. */}
         {day.status === 'empty' && day.hasDraft ? (

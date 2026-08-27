@@ -1,8 +1,13 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { type ReactNode, useCallback, useEffect } from 'react'
 
 import { useSessionQuery } from '@/entities/session/api/queries'
 import { refreshMediaSession } from '@/entities/session/api/sessionApi'
-import { useSessionStore } from '@/entities/session/model/sessionStore'
+import { fetchCurrentExhibition } from '@/entities/exhibition/api/exhibitionApi'
+import { registerMediaRecovery } from '@/entities/session/model/mediaRecovery'
+import { exhibitionKeys } from '@/entities/exhibition/api/keys'
+import { hasAuthHint, useSessionStore } from '@/entities/session/model/sessionStore'
+import { CACHE_POLICY } from '@/shared/api/queryClient'
 import { useVisibilityChange } from '@/shared/hooks/useVisibilityChange'
 import { logger } from '@/shared/lib/logger'
 
@@ -23,6 +28,23 @@ const REFRESH_MARGIN_MS = 10 * 60_000
 
 export function SessionProvider({ children }: { children: ReactNode }) {
   const { data, isSuccess, isError } = useSessionQuery()
+  const queryClient = useQueryClient()
+
+  /**
+   * 낙관적 병렬 부팅(F-9) — 이전 방문에서 인증된 적이 있으면 세션 확인을 **기다리지 않고**
+   * 오늘의 전시를 함께 요청한다. C 화면 도달이 왕복 1회만큼 짧아진다.
+   *
+   * 세션이 무효로 판명되면 이 결과는 그냥 버려진다. 비회원이 한 번 헛요청하는 비용보다
+   * 매일 아침 오는 회원의 1회 왕복이 크다.
+   */
+  useEffect(() => {
+    if (!hasAuthHint()) return
+    void queryClient.prefetchQuery({
+      queryKey: exhibitionKeys.current(),
+      queryFn: fetchCurrentExhibition,
+      ...CACHE_POLICY.currentExhibition,
+    })
+  }, [queryClient])
   const setAuthenticated = useSessionStore((state) => state.setAuthenticated)
   const setAnonymous = useSessionStore((state) => state.setAnonymous)
   const mediaExpiresAt = useSessionStore((state) => state.mediaExpiresAt)
@@ -62,6 +84,17 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [ensureMediaSession])
 
   useVisibilityChange(useCallback(() => void ensureMediaSession(), [ensureMediaSession]))
+
+  /**
+   * 이미지가 연속으로 실패하면 만료를 의심하고 **만료 시각과 무관하게** 갱신한다(F-12).
+   * 타이머가 놓친 경우의 유일한 복구 경로다.
+   */
+  useEffect(() => {
+    registerMediaRecovery(async () => {
+      const { expiresAt } = await refreshMediaSession()
+      useSessionStore.setState({ mediaExpiresAt: expiresAt })
+    })
+  }, [])
 
   return <>{children}</>
 }

@@ -28,6 +28,10 @@ export function useLogin() {
     defaultValues: { phone: '', password: '' },
   })
 
+  // UX §3.2 — 두 필드가 채워지기 전에는 버튼을 활성화하지 않는다.
+  const [phone, password] = form.watch(['phone', 'password'])
+  const canSubmit = phone.trim().length > 0 && password.length > 0
+
   const submit = form.handleSubmit(async (values) => {
     setBannerMessage(null)
     try {
@@ -49,5 +53,5 @@ export function useLogin() {
     }
   })
 
-  return { form, submit, bannerMessage, isSubmitting: mutation.isPending }
+  return { form, submit, bannerMessage, canSubmit, isSubmitting: mutation.isPending }
 }

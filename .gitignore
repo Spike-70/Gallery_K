@@ -227,3 +227,10 @@ yarn-error.log*
 
 # Vite / Vitest cache
 .vite/
+
+# ── 프런트엔드 소스 예외 ────────────────────────────────────────────
+# 위쪽 파이썬 패키징 규칙은 경로를 가리지 않는다. `lib/` 한 줄이
+# frontend/src/shared/lib/ · mocks/lib/ · features/notification/lib/ 를 통째로
+# 삼켜 소스가 저장소에서 조용히 빠진다(clone 하면 빌드가 안 된다).
+# 프런트엔드에서 `lib/`는 빌드 산출물이 아니라 손으로 쓴 소스다.
+!frontend/**/lib/

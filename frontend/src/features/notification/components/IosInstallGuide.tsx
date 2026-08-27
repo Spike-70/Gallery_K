@@ -16,7 +16,8 @@ export function IosInstallGuide({ onClose }: { onClose: () => void }) {
         <Icon name="upload" size="md" className="text-secondary" />
         <Icon name="chevron-right" size="sm" className="text-tertiary" />
         <span className="flex items-center gap-2 text-body-sm text-secondary">
-          <Icon name="plus" size="sm" />홈 화면에 추가
+          <Icon name="plus" size="sm" />
+          {screens.notifyPrompt.iosStepAdd}
         </span>
       </div>
 

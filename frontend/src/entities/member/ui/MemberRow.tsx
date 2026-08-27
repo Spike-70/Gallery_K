@@ -1,5 +1,6 @@
 import { type Member, needsIosGuide } from '@/entities/member/model/types'
-import { screens } from '@/shared/config/messages'
+import { landmarks, screens } from '@/shared/config/messages'
+import { cn } from '@/shared/lib/cn'
 import { formatPhone } from '@/shared/lib/phone'
 import { Badge, Icon, Menu, type MenuItem } from '@/shared/ui'
 
@@ -15,10 +16,15 @@ export type MemberRowProps = {
   actions: MenuItem[]
 }
 
+/**
+ * 알림 상태 3종 — UX §3.15.
+ * `inactive`(구독은 있으나 실패 중)는 **벨 + `!`**로 표시한다.
+ * 회색 벨과 보통 벨을 색만으로 구분하면 색을 못 보는 사람에게는 같은 그림이다(DS-5).
+ */
 const PUSH_ICON = {
-  active: { name: 'bell', label: screens.members.pushActive, tone: 'text-secondary' },
-  inactive: { name: 'bell', label: screens.members.pushInactive, tone: 'text-empty' },
-  none: { name: 'bell-off', label: screens.members.pushNone, tone: 'text-tertiary' },
+  active: { name: 'bell', label: screens.members.pushActive, tone: 'text-secondary', warn: false },
+  inactive: { name: 'bell', label: screens.members.pushInactive, tone: 'text-empty', warn: true },
+  none: { name: 'bell-off', label: screens.members.pushNone, tone: 'text-tertiary', warn: false },
 } as const
 
 export function MemberRow({ member, actions }: MemberRowProps) {
@@ -39,8 +45,15 @@ export function MemberRow({ member, actions }: MemberRowProps) {
         </span>
       </div>
 
-      <Icon name={push.name} size="sm" label={push.label} className={push.tone} />
-      <Menu label={`${member.name} 관리`} items={actions} />
+      <span className={cn('relative inline-flex', push.tone)}>
+        <Icon name={push.name} size="sm" label={push.label} />
+        {push.warn ? (
+          <span aria-hidden className="absolute -right-1 -top-1 text-caption font-bold leading-none">
+            !
+          </span>
+        ) : null}
+      </span>
+      <Menu label={landmarks.memberActions(member.name)} items={actions} />
     </li>
   )
 }

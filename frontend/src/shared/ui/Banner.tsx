@@ -10,6 +10,7 @@ import { Icon, type IconName } from '@/shared/ui/Icon'
  * **경고색을 쓰지 않는다** — 사용자의 잘못이 아니다(UX-4).
  */
 export type BannerProps = {
+  ref?: React.Ref<HTMLDivElement>
   tone?: 'info' | 'offline' | 'update'
   message: string
   /** 우측 동작(`오늘의 전시로`, `새로고침` 등) */
@@ -23,9 +24,10 @@ const TONE_ICON: Record<NonNullable<BannerProps['tone']>, IconName> = {
   update: 'refresh',
 }
 
-export function Banner({ tone = 'info', message, action, className }: BannerProps) {
+export function Banner({ tone = 'info', message, action, className, ref }: BannerProps) {
   return (
     <div
+      ref={ref}
       role="status"
       className={cn(
         'flex w-full items-center justify-between gap-3 border-b border-border-default bg-surface px-4 py-3',

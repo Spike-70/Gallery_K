@@ -42,7 +42,7 @@ export function ArtworkEditorPage() {
     <>
       {slot.image ? (
         <div className="flex flex-col gap-3 pb-6">
-          <img src={slot.image.displayUrl} alt="" className="max-h-80 w-full object-contain" />
+          <img src={slot.image.displayUrl} alt="" className="max-h-image-preview w-full object-contain" />
           <div className="flex justify-between">
             <TextButton tone="accent" onClick={() => setReplaceOpen(true)}>
               {actions.replacePhoto}

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 
 import { useArchiveQuery } from '@/entities/exhibition/api/queries'
 import { ArchiveRow } from '@/entities/exhibition/ui/ArchiveRow'
@@ -6,7 +6,8 @@ import { resolveErrorMessage } from '@/shared/api/errorMessages'
 import { actions, screenTitles, status } from '@/shared/config/messages'
 import { paths } from '@/shared/config/paths'
 import { useIntersection } from '@/shared/hooks/useIntersection'
-import { BackLink, EmptyState, ErrorState, Skeleton } from '@/shared/ui'
+import { useScrollRestoration } from '@/shared/hooks/useScrollRestoration'
+import { BackLink, EmptyState, ErrorState, PullToRefresh, Skeleton } from '@/shared/ui'
 
 /**
  * C-3. 지난 전시 — UX 설계서 §3.9
@@ -16,8 +17,8 @@ import { BackLink, EmptyState, ErrorState, Skeleton } from '@/shared/ui'
  */
 export function ArchivePage() {
   const query = useArchiveQuery()
-  const sentinelRef = useRef<HTMLDivElement>(null)
-  const reachedEnd = useIntersection(sentinelRef)
+  useScrollRestoration('archive-list')
+  const { ref: sentinelRef, intersecting: reachedEnd } = useIntersection()
 
   useEffect(() => {
     if (reachedEnd && query.hasNextPage && !query.isFetchingNextPage) {
@@ -28,13 +29,13 @@ export function ArchivePage() {
   const exhibitions = query.data?.pages.flatMap((page) => page.items) ?? []
 
   return (
-    <>
+    <PullToRefresh onRefresh={() => query.refetch()} disabled={query.isFetching}>
       <h1 className="pb-6 text-center text-title-md text-primary">{screenTitles.archive}</h1>
 
       {query.isPending ? (
         <div className="flex flex-col gap-3">
           {Array.from({ length: 5 }, (_, index) => (
-            <Skeleton key={index} className="h-[72px] w-full" />
+            <Skeleton key={index} className="h-row w-full" />
           ))}
         </div>
       ) : query.isError ? (
@@ -53,7 +54,7 @@ export function ArchivePage() {
 
           <div ref={sentinelRef} className="py-6 text-center">
             {query.hasNextPage ? (
-              <Skeleton className="mx-auto h-4 w-24" />
+              <Skeleton className="mx-auto h-4 w-1/4" />
             ) : (
               <p className="text-caption text-tertiary">{status.archiveEnd}</p>
             )}
@@ -62,6 +63,6 @@ export function ArchivePage() {
       )}
 
       <BackLink to={paths.gallery} label={actions.backGallery} />
-    </>
+    </PullToRefresh>
   )
 }

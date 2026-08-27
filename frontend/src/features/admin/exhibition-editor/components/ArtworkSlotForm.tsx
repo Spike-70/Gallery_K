@@ -3,7 +3,7 @@ import { useState } from 'react'
 import type { AdminSlot } from '@/entities/exhibition/model/admin'
 import { SaveIndicator } from '@/features/admin/exhibition-editor/components/SaveIndicator'
 import { type ArtworkSlotForm as SlotFormValues, emptyToNull } from '@/features/admin/exhibition-editor/model/editorSchemas'
-import { useAutoSave } from '@/features/admin/exhibition-editor/hooks/useAutoSave'
+import { readLocalDraft, useAutoSave } from '@/features/admin/exhibition-editor/hooks/useAutoSave'
 import { ARTWORK_DESCRIPTION_RECOMMENDED, LIMITS } from '@/shared/config/constants'
 import { screens } from '@/shared/config/messages'
 import type { IsoDate } from '@/shared/types/utility'
@@ -45,14 +45,27 @@ function toFormValues(slot: AdminSlot): SlotFormValues {
 }
 
 export function ArtworkSlotForm({ date, slot, onSave }: ArtworkSlotFormProps) {
+  const scope = `${date}:${slot.position}`
+
   // 다른 슬롯을 고르면 부모가 `key`를 바꿔 이 컴포넌트를 새로 만든다.
   // 동기화 effect 대신 마운트 한 번으로 초기화하는 편이 예측 가능하다.
-  const [values, setValues] = useState<SlotFormValues>(() => toFormValues(slot))
+  // 저장에 실패해 남아 있는 원고가 있으면 그것이 우선한다(RISK-1, UX §3.12).
+  const [values, setValues] = useState<SlotFormValues>(
+    () => readLocalDraft<SlotFormValues>(scope) ?? toFormValues(slot),
+  )
+
+  // 어느 한 칸이라도 넘치면 저장을 멈춘다 — 서버가 어차피 거절한다(UX §3.13 규칙 준용).
+  const tooLong =
+    values.title.length > LIMITS.artworkTitle ||
+    values.artist.length > LIMITS.artworkArtist ||
+    values.yearText.length > LIMITS.artworkYearText ||
+    values.description.length > LIMITS.artworkDescription ||
+    values.collection.length > LIMITS.artworkCollection
 
   const autoSave = useAutoSave<SlotFormValues>({
-    scope: `${date}:${slot.position}`,
+    scope,
     value: values,
-    enabled: Boolean(slot.artworkId),
+    enabled: Boolean(slot.artworkId) && !tooLong,
     save: async (next) =>
       onSave({
         position: slot.position,
@@ -85,6 +98,7 @@ export function ArtworkSlotForm({ date, slot, onSave }: ArtworkSlotFormProps) {
       <FieldGroup
         id={`slot-title-${slot.position}`}
         label={screens.editor.artworkTitleLabel}
+        error={values.title.length > LIMITS.artworkTitle ? screens.editor.tooLong : undefined}
         trailing={<CharCounter current={values.title.length} max={LIMITS.artworkTitle} />}
       >
         <TextField
@@ -97,6 +111,7 @@ export function ArtworkSlotForm({ date, slot, onSave }: ArtworkSlotFormProps) {
       <FieldGroup
         id={`slot-artist-${slot.position}`}
         label={screens.editor.artistLabel}
+        error={values.artist.length > LIMITS.artworkArtist ? screens.editor.tooLong : undefined}
         trailing={<CharCounter current={values.artist.length} max={LIMITS.artworkArtist} />}
       >
         <TextField
@@ -110,6 +125,7 @@ export function ArtworkSlotForm({ date, slot, onSave }: ArtworkSlotFormProps) {
         id={`slot-year-${slot.position}`}
         label={screens.editor.yearLabel}
         hint={screens.editor.yearHint}
+        error={values.yearText.length > LIMITS.artworkYearText ? screens.editor.tooLong : undefined}
         trailing={<CharCounter current={values.yearText.length} max={LIMITS.artworkYearText} />}
       >
         <TextField
@@ -123,11 +139,13 @@ export function ArtworkSlotForm({ date, slot, onSave }: ArtworkSlotFormProps) {
         id={`slot-description-${slot.position}`}
         label={screens.editor.descriptionLabel}
         hint={descriptionHint}
+        error={values.description.length > LIMITS.artworkDescription ? screens.editor.tooLong : undefined}
         trailing={<CharCounter current={values.description.length} max={LIMITS.artworkDescription} />}
       >
         <TextArea
           id={`slot-description-${slot.position}`}
           rows={6}
+          autoGrow
           value={values.description}
           onChange={(event) => set('description', event.target.value)}
         />
@@ -137,6 +155,7 @@ export function ArtworkSlotForm({ date, slot, onSave }: ArtworkSlotFormProps) {
         id={`slot-collection-${slot.position}`}
         label={screens.editor.collectionLabel}
         hint={screens.editor.collectionHint}
+        error={values.collection.length > LIMITS.artworkCollection ? screens.editor.tooLong : undefined}
         trailing={<CharCounter current={values.collection.length} max={LIMITS.artworkCollection} />}
       >
         <TextField

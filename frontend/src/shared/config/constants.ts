@@ -15,6 +15,10 @@ export const CALENDAR_DEFAULT_DAYS = 7
 /** 관리자 달력 추가 로드 단위 */
 export const CALENDAR_PAGE_SIZE = 30
 
+/** 관람 현황 조회 범위 — B-1은 최근 7일, B-1-1은 30일 (UX 문서 §3.17, GAP-16) */
+export const STATS_DAILY_DAYS = 7
+export const STATS_MEMBER_DAYS = 30
+
 /** 회원 목록 페이지 크기 (API 문서 §9.13) */
 export const MEMBER_PAGE_SIZE = 30
 
@@ -64,6 +68,8 @@ export const GESTURE = {
   dismissDistance: 120,
   dismissVelocity: 0.5,
   longPressMs: 400,
+  /** 당겨서 새로고침 임계 (UX 문서 §7) */
+  pullDistance: 80,
   doubleTapMs: 300,
   zoomMax: 4,
 } as const

@@ -1,4 +1,4 @@
-import { forwardRef, useState } from 'react'
+import { type ReactNode, forwardRef, useState } from 'react'
 
 import { screens } from '@/shared/config/messages'
 import { FieldGroup, IconButton, TextField, fieldIds } from '@/shared/ui'
@@ -10,7 +10,7 @@ import { FieldGroup, IconButton, TextField, fieldIds } from '@/shared/ui'
 export type PasswordFieldProps = {
   id?: string
   label: string
-  hint?: string
+  hint?: ReactNode
   error?: string
   autoComplete: 'current-password' | 'new-password'
   disabled?: boolean

@@ -17,10 +17,11 @@ import {
   passwordResetConfirmSchema,
   passwordResetRequestSchema,
 } from '@/features/auth/model/schemas'
-import { actions, screenTitles, screens } from '@/shared/config/messages'
+import { ERROR_CODES, isApiError } from '@/shared/api/ApiError'
+import { actions, screenTitles, screens, templates } from '@/shared/config/messages'
 import { applyApiError } from '@/shared/lib/formErrors'
 import { normalizePhone } from '@/shared/lib/phone'
-import { BackLink, Button, FieldGroup, TextField, toast } from '@/shared/ui'
+import { BackLink, Button, FieldGroup, TextField } from '@/shared/ui'
 
 /**
  * A-2. 비밀번호 재설정 *(v1.1)* — UX 설계서 §3.4
@@ -32,6 +33,8 @@ export function PasswordResetPage() {
   const navigate = useNavigate()
   const [phone, setPhone] = useState<string | null>(null)
   const [remainingSeconds, setRemainingSeconds] = useState(0)
+  /** 재발송까지 남은 시간. **서버가 준 `resend_after_seconds`에서 온다** — 만료 시간에서 역산하지 않는다. */
+  const [resendInSeconds, setResendInSeconds] = useState(0)
   const [bannerMessage, setBannerMessage] = useState<string | null>(null)
 
   const requestMutation = usePasswordResetRequestMutation()
@@ -46,12 +49,15 @@ export function PasswordResetPage() {
     defaultValues: { code: '', newPassword: '' },
   })
 
-  // 남은 시간 카운트다운 — `2:47` 형식
+  // 남은 시간 카운트다운 — `2:47` 형식. 재발송 대기도 같은 초침을 쓴다.
   useEffect(() => {
-    if (remainingSeconds <= 0) return
-    const timer = window.setInterval(() => setRemainingSeconds((value) => Math.max(0, value - 1)), 1000)
+    if (remainingSeconds <= 0 && resendInSeconds <= 0) return
+    const timer = window.setInterval(() => {
+      setRemainingSeconds((value) => Math.max(0, value - 1))
+      setResendInSeconds((value) => Math.max(0, value - 1))
+    }, 1000)
     return () => window.clearInterval(timer)
-  }, [remainingSeconds])
+  }, [remainingSeconds, resendInSeconds])
 
   const submitRequest = requestForm.handleSubmit(async (values) => {
     setBannerMessage(null)
@@ -59,6 +65,7 @@ export function PasswordResetPage() {
       const result = await requestMutation.mutateAsync({ phone: normalizePhone(values.phone) })
       setPhone(normalizePhone(values.phone))
       setRemainingSeconds(result.expiresInSeconds)
+      setResendInSeconds(result.resendAfterSeconds)
     } catch (error) {
       setBannerMessage(applyApiError(error, requestForm.setError))
     }
@@ -68,9 +75,20 @@ export function PasswordResetPage() {
     setBannerMessage(null)
     try {
       await confirmMutation.mutateAsync({ phone: phone ?? '', ...values })
-      toast.info(screens.passwordReset.doneBanner)
-      navigate(paths.login, { replace: true })
+      // 완료 안내는 **로그인 화면 상단 배너**로 전달한다(UX §3.4). 토스트는 사라진다.
+      navigate(paths.login, { replace: true, state: { banner: screens.passwordReset.doneBanner } })
     } catch (error) {
+      // `인증번호가 맞지 않습니다. (남은 횟수 3회)` — 서버가 준 남은 횟수를 필드 옆에 붙인다(UX §3.4).
+      if (isApiError(error) && error.code === ERROR_CODES.resetCodeInvalid) {
+        const attemptsLeft = Number(error.details?.attempts_left)
+        confirmForm.setError('code', {
+          type: 'server',
+          message: Number.isFinite(attemptsLeft)
+            ? templates.codeAttemptsLeft(error.message, attemptsLeft)
+            : error.message,
+        })
+        return
+      }
       setBannerMessage(applyApiError(error, confirmForm.setError))
     }
   })
@@ -140,10 +158,12 @@ export function PasswordResetPage() {
             variant="ghost"
             size="md"
             block
-            disabled={remainingSeconds > 120}
+            disabled={resendInSeconds > 0}
             onClick={() => void submitRequest()}
           >
-            {actions.resendCode}
+            {resendInSeconds > 0
+              ? templates.resendAvailableIn(actions.resendCode, resendInSeconds)
+              : actions.resendCode}
           </Button>
         </form>
       )}

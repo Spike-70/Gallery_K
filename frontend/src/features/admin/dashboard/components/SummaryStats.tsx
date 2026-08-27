@@ -13,7 +13,7 @@ export type SummaryStatsProps = {
 }
 
 export function SummaryStats({ summary, isLoading }: SummaryStatsProps) {
-  if (isLoading) return <Skeleton className="h-5 w-64" />
+  if (isLoading) return <Skeleton className="h-5 w-2/3" />
   // 요약 줄만 실패해도 목록은 정상 렌더한다(UX §3.11).
   if (!summary) return null
 

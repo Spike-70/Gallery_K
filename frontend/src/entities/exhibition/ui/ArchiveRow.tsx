@@ -20,7 +20,7 @@ export function ArchiveRow({ exhibition, to }: ArchiveRowProps) {
   return (
     <Link
       to={to}
-      className="flex min-h-[72px] items-center gap-4 border-b border-border-default py-3"
+      className="flex min-h-row items-center gap-4 border-b border-border-default py-3"
     >
       <div className="h-16 w-16 shrink-0 overflow-hidden">
         <ArtworkImage image={exhibition.coverImage} alt="" variant="thumb" />

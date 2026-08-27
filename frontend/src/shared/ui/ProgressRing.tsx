@@ -5,6 +5,7 @@ import { cn } from '@/shared/lib/cn'
  * 값이 없으면 무한 회전한다.
  */
 export type ProgressRingProps = {
+  ref?: React.Ref<SVGSVGElement>
   /** 0–100. `null`이면 불확정 상태 */
   value: number | null
   size?: 'sm' | 'md'
@@ -14,7 +15,7 @@ export type ProgressRingProps = {
 
 const DIMENSION = { sm: 24, md: 40 } as const
 
-export function ProgressRing({ value, size = 'sm', className, label }: ProgressRingProps) {
+export function ProgressRing({ value, size = 'sm', className, label, ref }: ProgressRingProps) {
   const dimension = DIMENSION[size]
   const radius = dimension / 2 - 2
   const circumference = 2 * Math.PI * radius
@@ -23,6 +24,7 @@ export function ProgressRing({ value, size = 'sm', className, label }: ProgressR
 
   return (
     <svg
+      ref={ref}
       width={dimension}
       height={dimension}
       viewBox={`0 0 ${dimension} ${dimension}`}
