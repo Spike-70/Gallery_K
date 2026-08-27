@@ -2,6 +2,8 @@ import { screen, waitFor } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { LandingPage } from '@/features/landing'
+import { EXHIBITION_TITLE, landing } from '@/test/fixtures/server'
+import { stubApi } from '@/test/utils/apiStub'
 import { renderWithProviders } from '@/test/utils/renderWithProviders'
 
 /**
@@ -10,6 +12,7 @@ import { renderWithProviders } from '@/test/utils/renderWithProviders'
  */
 describe('A. 첫 화면', () => {
   it('데이터가 도착하기 전에도 로고와 입장 버튼이 보인다', () => {
+    stubApi({ 'GET /public/landing': () => landing() })
     renderWithProviders(<LandingPage />)
 
     expect(screen.getByRole('heading', { name: 'Morning Gallery K' })).toBeInTheDocument()
@@ -18,10 +21,11 @@ describe('A. 첫 화면', () => {
   })
 
   it('전시 제목은 비회원에게도 노출된다', async () => {
+    stubApi({ 'GET /public/landing': () => landing({ is_authenticated: false }) })
     renderWithProviders(<LandingPage />)
 
     await waitFor(() => {
-      expect(screen.getByText('빛을 등진 사람들')).toBeInTheDocument()
+      expect(screen.getByText(EXHIBITION_TITLE)).toBeInTheDocument()
     })
   })
 })

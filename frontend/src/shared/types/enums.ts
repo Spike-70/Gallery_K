@@ -9,10 +9,14 @@ export type UserRole = (typeof USER_ROLES)[number]
 export const FONT_SCALES = ['normal', 'large'] as const
 export type FontScale = (typeof FONT_SCALES)[number]
 
-export const CREATED_VIA = ['self', 'curator'] as const
+export const CREATED_VIA = ['self', 'curator', 'social'] as const
 export type CreatedVia = (typeof CREATED_VIA)[number]
 
-export const IMAGE_STATUSES = ['empty', 'uploading', 'processing', 'ready', 'failed'] as const
+/** 소셜 로그인 제공자 (소셜 문서 §6). 백엔드 `SocialProvider`를 미러링한다 */
+export const SOCIAL_PROVIDERS = ['kakao', 'google'] as const
+export type SocialProvider = (typeof SOCIAL_PROVIDERS)[number]
+
+export const IMAGE_STATUSES = ['empty', 'uploading', 'ready', 'failed'] as const
 export type ImageStatus = (typeof IMAGE_STATUSES)[number]
 
 /** DB 컬럼이 아니라 관리자 달력 응답의 파생 상태(Y / ↑ / N) */

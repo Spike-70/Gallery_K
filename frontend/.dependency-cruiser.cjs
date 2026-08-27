@@ -56,22 +56,10 @@ module.exports = {
       from: {},
       to: { circular: true },
     },
-    {
-      name: 'no-mocks-in-production-path',
-      comment:
-        '데모 목은 API 계층(entities/*/api, features/*/api)과 명시적 데모 컴포넌트에서만 참조한다. ' +
-        '화면 코드가 목을 직접 알면 제거가 어려워진다(src/mocks/README.md).',
-      severity: 'warn',
-      from: {
-        path: '^src/(features|entities|app|shared)/',
-        pathNot: ['/api/', 'DemoAccountsNotice', 'EntranceImage', 'useUploadQueue'],
-      },
-      to: { path: '^src/mocks/' },
-    },
   ],
   options: {
     doNotFollow: { path: 'node_modules' },
-    exclude: { path: '(^src/test/|\\.test\\.tsx?$|^src/mocks/)' },
+    exclude: { path: '(^src/test/|\\.test\\.tsx?$)' },
     tsConfig: { fileName: './tsconfig.app.json' },
     tsPreCompilationDeps: true,
     enhancedResolveOptions: { extensions: ['.ts', '.tsx', '.js'] },

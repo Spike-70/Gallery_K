@@ -96,6 +96,13 @@ export default {
       'control-sm': '40px',
       'control-md': '48px',
       'control-lg': '56px',
+      // 컴포넌트 치수 (§8) — 간격 스케일 밖의 값에 이름을 준다. 임의 값 대신 이것을 쓴다.
+      'switch-track': 'var(--gk-size-switch-track)',
+      row: 'var(--gk-size-row)',
+      'row-lg': 'var(--gk-size-row-lg)',
+      block: 'var(--gk-size-block)',
+      'image-preview': 'var(--gk-size-image-preview)',
+      'icon-lg': 'var(--gk-size-icon-lg)',
       full: '100%',
     },
 
@@ -109,6 +116,13 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Pretendard Variable', 'Pretendard', '-apple-system', 'system-ui', 'sans-serif'],
+      },
+      maxHeight: {
+        sheet: 'var(--gk-size-sheet-max)',
+      },
+      borderWidth: {
+        // Spinner 링 굵기. 기본 스케일(2·4·8)에 3이 없다.
+        3: '3px',
       },
       maxWidth: {
         gallery: '560px',

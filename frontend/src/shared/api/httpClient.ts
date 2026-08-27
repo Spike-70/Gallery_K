@@ -181,15 +181,19 @@ export const httpClient = {
   /**
    * 기록 API 전용 — 화면 이탈 중에도 전송된다(프런트 §9.3).
    * 실패해도 조용히 포기한다. 사용자에게 오류를 보여주지 않는다.
+   *
+   * `navigator.sendBeacon`을 쓰지 않는다 — 커스텀 헤더를 실을 수 없어
+   * 서버의 변경 요청 검사(`X-Requested-With`)에 걸린다(API 문서 §2.7).
+   * `keepalive`가 같은 일(이탈 후 전송)을 하면서 헤더를 보낼 수 있다.
    */
   beacon(path: string): void {
     try {
-      const url = buildUrl(path)
-      if (navigator.sendBeacon) {
-        navigator.sendBeacon(url)
-        return
-      }
-      void fetch(url, { method: 'POST', credentials: 'include', headers: CSRF_HEADER, keepalive: true })
+      void fetch(buildUrl(path), {
+        method: 'POST',
+        credentials: 'include',
+        headers: CSRF_HEADER,
+        keepalive: true,
+      }).catch(() => undefined)
     } catch (error) {
       logger.debug('beacon failed', path, error)
     }

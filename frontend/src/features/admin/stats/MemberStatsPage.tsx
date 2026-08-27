@@ -1,10 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router-dom'
 
+import { statsKeys } from '@/features/admin/stats/api/keys'
 import { fetchMemberStats } from '@/features/admin/stats/api/statsApi'
 import { resolveErrorMessage } from '@/shared/api/errorMessages'
 import { CACHE_POLICY } from '@/shared/api/queryClient'
-import { actions, screens } from '@/shared/config/messages'
+import { STATS_MEMBER_DAYS } from '@/shared/config/constants'
+import { actions, screens, templates } from '@/shared/config/messages'
 import { paths } from '@/shared/config/paths'
 import { formatShortDate } from '@/shared/lib/date'
 import type { Uuid } from '@/shared/types/utility'
@@ -20,8 +22,8 @@ export function MemberStatsPage() {
   const { memberId } = useParams<{ memberId: Uuid }>()
 
   const query = useQuery({
-    queryKey: ['admin', 'stats', 'member', memberId, 30],
-    queryFn: () => fetchMemberStats(memberId as Uuid, 30),
+    queryKey: statsKeys.member(memberId as Uuid, STATS_MEMBER_DAYS),
+    queryFn: () => fetchMemberStats(memberId as Uuid, STATS_MEMBER_DAYS),
     enabled: Boolean(memberId),
     ...CACHE_POLICY.stats,
   })
@@ -39,10 +41,12 @@ export function MemberStatsPage() {
         {query.data.days.map((day) => (
           <li key={day.date} className="flex items-center justify-between border-b border-border-default py-3">
             <span className="tabular text-body-md text-primary">
-              {formatShortDate(day.date)} · {day.exhibitionTitle ?? '—'}
+              {formatShortDate(day.date)} · {day.exhibitionTitle ?? templates.none}
             </span>
             <span className="tabular text-body-md text-secondary">
-              {day.entered ? `${day.viewedArtworkCount} / ${day.totalArtworkCount}` : '—'}
+              {day.entered
+                ? templates.viewedRatio(day.viewedArtworkCount, day.totalArtworkCount)
+                : templates.none}
             </span>
           </li>
         ))}

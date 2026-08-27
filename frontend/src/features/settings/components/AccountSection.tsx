@@ -20,9 +20,17 @@ export function AccountSection({ user }: { user: SessionUser }) {
         </div>
       </dl>
 
-      <Divider className="my-2" />
-
-      <TextLink to={paths.passwordChange}>{screens.settings.passwordChangeLink}</TextLink>
+      {/*
+        소셜로만 로그인하는 계정에는 바꿀 비밀번호가 없다(소셜 문서 §5.2).
+        항목을 비활성으로 두지 않고 **감춘다** — 누를 수 없는 줄이 하나 남으면
+        사용자는 자기가 무엇을 잘못했는지 찾는다.
+      */}
+      {user.hasPassword ? (
+        <>
+          <Divider className="my-2" />
+          <TextLink to={paths.passwordChange}>{screens.settings.passwordChangeLink}</TextLink>
+        </>
+      ) : null}
     </section>
   )
 }

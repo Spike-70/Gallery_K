@@ -13,6 +13,7 @@ import type {
   ImageStatus,
   PushPlatform,
   PushStatus,
+  SocialProvider,
   UserRole,
 } from '@/shared/types/enums'
 import type { IsoDate, IsoDateTime, Nullable, TimeOfDay, Uuid } from '@/shared/types/utility'
@@ -34,7 +35,12 @@ export type RawArtworkSummary = {
   position: number
   artist: string
   title: string
-  image: RawImageSet
+  /**
+   * 이미지가 아직 `ready`가 아니면 `null`이다(API 문서 §3.2·§9.12).
+   * 발행된 전시는 12점이 모두 완성이라 관람자 경로에서는 사실상 채워져 있지만,
+   * **미리보기는 미완성 상태를 그대로 보여준다** — 그 자리에 자리표시자를 그린다.
+   */
+  image: Nullable<RawImageSet>
   is_viewed: boolean
 }
 
@@ -93,6 +99,8 @@ export type RawSessionUser = {
   notify_enabled: boolean
   notify_at: TimeOfDay
   must_change_password: boolean
+  /** false면 소셜로만 로그인하는 계정이다. D 설정이 비밀번호 변경 항목을 감춘다 */
+  has_password: boolean
   created_at: IsoDateTime
 }
 
@@ -206,7 +214,6 @@ export type RawLanding = {
 export type RawSession = {
   is_authenticated: boolean
   user: Nullable<RawSessionUser>
-  media_session_expires_at: Nullable<IsoDateTime>
 }
 
 /** §8.5 푸시 구독 */
@@ -217,6 +224,26 @@ export type RawPushSubscription = {
   is_active: boolean
   created_at: IsoDateTime
   last_success_at: Nullable<IsoDateTime>
+}
+
+/** §3.10 SocialIdentity — 연결된 외부 계정 */
+export type RawSocialIdentity = {
+  id: Uuid
+  provider: SocialProvider
+  /** 화면에 그대로 쓰는 한국어 이름. 문구가 프런트에 흩어지지 않게 서버가 준다 */
+  label: string
+  email: Nullable<string>
+  display_name: Nullable<string>
+  linked_at: IsoDateTime
+  last_login_at: Nullable<IsoDateTime>
+}
+
+/** §6.11 켜진 제공자 */
+export type RawSocialProvider = {
+  provider: SocialProvider
+  label: string
+  /** `<a href>`가 그대로 쓰는 절대 경로. 프런트가 조립하지 않는다 */
+  start_url: string
 }
 
 /** §9.17 전역 설정 */

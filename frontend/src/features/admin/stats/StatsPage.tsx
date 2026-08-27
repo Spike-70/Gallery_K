@@ -2,10 +2,11 @@ import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import { statsKeys } from '@/features/admin/stats/api/keys'
 import { fetchDailyStats, searchMembers } from '@/features/admin/stats/api/statsApi'
 import { resolveErrorMessage } from '@/shared/api/errorMessages'
 import { CACHE_POLICY } from '@/shared/api/queryClient'
-import { actions, screenTitles, screens, status } from '@/shared/config/messages'
+import { actions, screenTitles, screens, status, templates } from '@/shared/config/messages'
 import { paths } from '@/shared/config/paths'
 import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue'
 import { formatShortDate } from '@/shared/lib/date'
@@ -20,13 +21,13 @@ export function StatsPage() {
   const debounced = useDebouncedValue(search, 300)
 
   const dailyQuery = useQuery({
-    queryKey: ['admin', 'stats', 'daily', 7],
-    queryFn: () => fetchDailyStats(7),
+    queryKey: statsKeys.daily(),
+    queryFn: fetchDailyStats,
     ...CACHE_POLICY.stats,
   })
 
   const memberQuery = useQuery({
-    queryKey: ['admin', 'stats', 'search', debounced],
+    queryKey: statsKeys.memberSearch(debounced),
     queryFn: () => searchMembers(debounced),
     enabled: debounced.length > 0,
     ...CACHE_POLICY.stats,
@@ -47,10 +48,16 @@ export function StatsPage() {
           {dailyQuery.data.map((day) => (
             <li key={day.date} className="flex items-center justify-between border-b border-border-default py-3">
               <span className="tabular text-body-md text-primary">
-                {formatShortDate(day.date)} · {day.isCarriedOver ? '↑ ' : ''}
-                {day.exhibitionTitle ?? '—'}
+                {formatShortDate(day.date)} ·{' '}
+                {day.exhibitionTitle
+                  ? day.isCarriedOver
+                    ? templates.carriedOverTitle(day.exhibitionTitle)
+                    : day.exhibitionTitle
+                  : templates.none}
               </span>
-              <span className="tabular text-body-md text-secondary">{day.entrantCount}명</span>
+              <span className="tabular text-body-md text-secondary">
+                {templates.entrantCount(day.entrantCount)}
+              </span>
             </li>
           ))}
         </ul>

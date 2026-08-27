@@ -20,7 +20,7 @@ export function toArtworkSummary(raw: RawArtworkSummary): ArtworkSummary {
     position: raw.position,
     artist: raw.artist,
     title: raw.title,
-    image: toImageSet(raw.image),
+    image: raw.image ? toImageSet(raw.image) : null,
     isViewed: raw.is_viewed,
   }
 }

@@ -1,6 +1,6 @@
 import type { ArtworkSummary } from '@/entities/artwork/model/types'
 import { ArtworkThumb } from '@/entities/artwork/ui/ArtworkThumb'
-import { EAGER_IMAGE_COUNT } from '@/shared/config/constants'
+import { ARTWORK_COUNT, EAGER_IMAGE_COUNT } from '@/shared/config/constants'
 import type { Uuid } from '@/shared/types/utility'
 
 /**
@@ -15,9 +15,12 @@ export type ArtworkGridProps = {
   artworks: ArtworkSummary[]
   artworkPath: (artworkId: Uuid) => string
   onPrefetch?: (artworkId: Uuid) => void
+  onRetryImage?: () => void
+  /** 아직 올라오지 않은 자리의 문구(미리보기) */
+  pendingLabel?: string
 }
 
-export function ArtworkGrid({ artworks, artworkPath, onPrefetch }: ArtworkGridProps) {
+export function ArtworkGrid({ artworks, artworkPath, onPrefetch, onRetryImage, pendingLabel }: ArtworkGridProps) {
   return (
     <ul className="gk-artwork-grid list-none p-0">
       {artworks.map((artwork, index) => (
@@ -27,6 +30,8 @@ export function ArtworkGrid({ artworks, artworkPath, onPrefetch }: ArtworkGridPr
             to={artworkPath(artwork.id)}
             priority={index < EAGER_IMAGE_COUNT}
             onPrefetch={onPrefetch ? () => onPrefetch(artwork.id) : undefined}
+            onRetryImage={onRetryImage}
+            pendingLabel={pendingLabel}
           />
         </li>
       ))}
@@ -38,7 +43,7 @@ export function ArtworkGrid({ artworks, artworkPath, onPrefetch }: ArtworkGridPr
 export function ArtworkGridSkeleton() {
   return (
     <div className="gk-artwork-grid" aria-hidden>
-      {Array.from({ length: 12 }, (_, index) => (
+      {Array.from({ length: ARTWORK_COUNT }, (_, index) => (
         <div key={index} className="gk-shimmer aspect-square" />
       ))}
     </div>

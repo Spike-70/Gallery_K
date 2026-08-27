@@ -14,11 +14,12 @@ export type MenuItem = {
 }
 
 export type MenuProps = {
+  ref?: React.Ref<HTMLDivElement>
   label: string
   items: MenuItem[]
 }
 
-export function Menu({ label, items }: MenuProps) {
+export function Menu({ label, items, ref }: MenuProps) {
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -42,12 +43,20 @@ export function Menu({ label, items }: MenuProps) {
   const ordered = [...items].sort((a, b) => Number(a.destructive ?? false) - Number(b.destructive ?? false))
 
   return (
-    <div ref={containerRef} className="relative">
+    <div
+      ref={(node) => {
+        // 바깥 클릭 감지를 위한 내부 ref 와 사용처가 준 ref 를 함께 채운다.
+        containerRef.current = node
+        if (typeof ref === 'function') ref(node)
+        else if (ref) ref.current = node
+      }}
+      className="relative"
+    >
       <IconButton icon="more" label={label} aria-expanded={open} onClick={() => setOpen((v) => !v)} />
       {open ? (
         <ul
           role="menu"
-          className="absolute right-0 top-full z-dialog min-w-[10rem] overflow-hidden rounded-md border border-border-default bg-surface shadow-dialog"
+          className="absolute right-0 top-full z-dialog min-w-block overflow-hidden rounded-md border border-border-default bg-surface shadow-dialog"
         >
           {ordered.map((item) => (
             <li key={item.label} role="none">

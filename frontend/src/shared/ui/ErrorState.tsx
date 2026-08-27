@@ -8,6 +8,7 @@ import { Button } from '@/shared/ui/Button'
  * 기술 정보를 노출하지 않으며 `requestId`만 `문의 번호`로 병기한다(UX §3.19).
  */
 export type ErrorStateProps = {
+  ref?: React.Ref<HTMLDivElement>
   message: string
   onRetry?: () => void
   retryLabel?: string
@@ -23,9 +24,11 @@ export function ErrorState({
   requestId,
   size = 'page',
   className,
+  ref,
 }: ErrorStateProps) {
   return (
     <div
+      ref={ref}
       role="alert"
       className={cn(
         'flex flex-col items-center gap-4 text-center',

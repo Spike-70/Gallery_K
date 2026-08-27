@@ -18,10 +18,17 @@ export const endpoints = {
     password: () => '/auth/password',
     passwordResetRequest: () => '/auth/password/reset/request',
     passwordResetConfirm: () => '/auth/password/reset/confirm',
-  },
 
-  media: {
-    session: () => '/media/session',
+    /**
+     * 소셜 로그인 — API 명세서 §6.11–§6.15
+     *
+     * `socialStart`만 **절대 경로**다. 나머지와 달리 `httpClient`를 타지 않고
+     * `<a href>`의 목적지가 되기 때문이다 — 브라우저가 직접 이동해야 리다이렉트
+     * 방식이 성립한다(소셜 문서 SA-1).
+     */
+    socialProviders: () => '/auth/social/providers',
+    socialLink: () => '/auth/social/link',
+    socialSignup: () => '/auth/social/signup',
   },
 
   exhibitions: {
@@ -41,6 +48,8 @@ export const endpoints = {
     settings: () => '/me/settings',
     pushSubscriptions: () => '/me/push-subscriptions',
     pushSubscription: (id: Uuid) => `/me/push-subscriptions/${id}`,
+    socialIdentities: () => '/me/social-identities',
+    socialIdentity: (id: Uuid) => `/me/social-identities/${id}`,
   },
 
   admin: {

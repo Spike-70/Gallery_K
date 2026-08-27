@@ -36,6 +36,14 @@ export const ERROR_CODES = {
   resetCodeInvalid: 'RESET_CODE_INVALID',
   resetCodeExpired: 'RESET_CODE_EXPIRED',
 
+  socialProviderUnknown: 'SOCIAL_PROVIDER_UNKNOWN',
+  socialDisabled: 'SOCIAL_DISABLED',
+  socialStateInvalid: 'SOCIAL_STATE_INVALID',
+  socialExchangeFailed: 'SOCIAL_EXCHANGE_FAILED',
+  socialLinkExpired: 'SOCIAL_LINK_EXPIRED',
+  socialAlreadyLinked: 'SOCIAL_ALREADY_LINKED',
+  socialLastIdentity: 'SOCIAL_LAST_IDENTITY',
+
   exhibitionNotFound: 'EXHIBITION_NOT_FOUND',
   exhibitionNotOpened: 'EXHIBITION_NOT_OPENED',
   exhibitionBackfillForbidden: 'EXHIBITION_BACKFILL_FORBIDDEN',

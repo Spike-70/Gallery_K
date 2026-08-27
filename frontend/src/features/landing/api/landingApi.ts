@@ -1,13 +1,9 @@
-// [API]
-// import { endpoints } from '@/shared/api/endpoints'
-// import { httpClient } from '@/shared/api/httpClient'
-// import type { RawLanding } from '@/shared/api/types'
+import { endpoints } from '@/shared/api/endpoints'
+import { httpClient } from '@/shared/api/httpClient'
+import type { RawLanding } from '@/shared/api/types'
 
 import { toNotice } from '@/entities/notice/api/mappers'
 import type { Landing } from '@/features/landing/model/types'
-
-// [MOCK]
-import * as publicMock from '@/mocks/handlers/publicHandlers'
 
 /**
  * `GET /public/landing`
@@ -15,11 +11,7 @@ import * as publicMock from '@/mocks/handlers/publicHandlers'
  * 화면은 이 응답이 없어도 완전한 레이아웃을 그린다(F-4).
  */
 export async function fetchLanding(): Promise<Landing> {
-  // [API]
-  // const raw = await httpClient.get<RawLanding>(endpoints.public.landing())
-
-  // [MOCK]
-  const raw = await publicMock.getLanding()
+  const raw = await httpClient.get<RawLanding>(endpoints.public.landing())
 
   return {
     today: raw.today,

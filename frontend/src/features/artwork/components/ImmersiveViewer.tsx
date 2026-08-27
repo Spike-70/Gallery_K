@@ -9,7 +9,7 @@ import { useFocusTrap } from '@/shared/hooks/useFocusTrap'
 import { useLockBodyScroll } from '@/shared/hooks/useLockBodyScroll'
 import { useSwipe } from '@/shared/hooks/useSwipe'
 import { STORAGE_KEYS, localStore } from '@/shared/lib/storage'
-import { IconButton } from '@/shared/ui'
+import { IconButton, Spinner } from '@/shared/ui'
 
 /**
  * 전체화면 뷰어 — UX 설계서 §3.8, 디자인 시스템 §8.2
@@ -29,7 +29,7 @@ export type ImmersiveViewerProps = {
 
 export function ImmersiveViewer({ artwork, onClose }: ImmersiveViewerProps) {
   const panelRef = useRef<HTMLDivElement>(null)
-  const { zoom, isZoomed, handlers: zoomHandlers } = usePinchZoom()
+  const { zoom, isZoomed, toggleZoom, handlers: zoomHandlers } = usePinchZoom()
   const [showHint, setShowHint] = useState(() => localStore.get(STORAGE_KEYS.zoomHintSeen) !== '1')
 
   useLockBodyScroll(true)
@@ -58,8 +58,36 @@ export function ImmersiveViewer({ artwork, onClose }: ImmersiveViewerProps) {
     return () => window.clearTimeout(timer)
   }, [showHint])
 
-  // 확대가 시작된 뒤에만 원본을 건다. 그전에는 display 이미지가 보인다.
-  const source = isZoomed && artwork.image.originUrl ? artwork.image.originUrl : artwork.image.displayUrl
+  /**
+   * 확대가 시작된 뒤에만 원본을 건다. 그전에는 display 이미지가 보인다(§9.2).
+   *
+   * **`src`를 바로 갈아끼우지 않는다.** 원본은 수 MB라 교체 순간 화면이 비고,
+   * 사용자는 아무 표시 없이 기다리게 된다. 뒤에서 받아 두었다가 **로드된 뒤에** 바꾸고,
+   * 받는 동안에는 우상단에 작은 스피너를 띄운다(UX §3.8 상태표).
+   */
+  const originUrl = artwork.image?.originUrl ?? null
+  const [originReady, setOriginReady] = useState(false)
+  const [originLoading, setOriginLoading] = useState(false)
+
+  useEffect(() => {
+    if (!isZoomed || !originUrl || originReady || originLoading) return
+    setOriginLoading(true)
+    const image = new Image()
+    image.src = originUrl
+    const settle = () => setOriginLoading(false)
+    image.onload = () => {
+      setOriginReady(true)
+      settle()
+    }
+    image.onerror = settle
+  }, [isZoomed, originUrl, originReady, originLoading])
+
+  // 아직 올라오지 않은 자리는 확대할 것이 없다(API 문서 §9.12). 훅을 모두 부른 뒤에
+  // 빠져나가야 호출 순서가 흔들리지 않는다. 호출부도 버튼을 그리지 않지만, 이 컴포넌트가
+  // 스스로 안전한 편이 낫다 — 다음에 다른 곳에서 열어도 깨지지 않는다.
+  if (!artwork.image) return null
+
+  const source = originReady && originUrl ? originUrl : artwork.image.displayUrl
 
   return createPortal(
     <div
@@ -82,7 +110,19 @@ export function ImmersiveViewer({ artwork, onClose }: ImmersiveViewerProps) {
       }}
       onPointerCancel={zoomHandlers.onPointerCancel}
     >
-      <div className="absolute right-2 top-2 z-immersive">
+      <div className="absolute right-2 top-2 z-immersive flex items-center gap-1">
+        {originLoading ? <Spinner size="sm" label={status.loading} /> : null}
+        {/*
+          핀치를 모르는 사용자를 위한 확대 대체 수단(UX-7). 제스처만 있는 기능은 두지 않는다.
+        */}
+        <IconButton
+          icon="zoom-in"
+          label={isZoomed ? actions.zoomOut : actions.zoomIn}
+          tone="inverse"
+          iconSize="lg"
+          aria-pressed={isZoomed}
+          onClick={toggleZoom}
+        />
         <IconButton icon="close" label={actions.close} tone="inverse" iconSize="lg" onClick={onClose} />
       </div>
 

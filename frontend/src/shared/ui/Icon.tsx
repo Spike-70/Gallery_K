@@ -40,10 +40,11 @@ export type IconName = (typeof ICON_NAMES)[number]
 const SIZE_CLASS = {
   sm: 'h-5 w-5', // 20px 기본
   md: 'h-6 w-6', // 24px 단독 버튼
-  lg: 'h-7 w-7', // 28px 전체화면 뷰어
+  lg: 'h-icon-lg w-icon-lg', // 28px 전체화면 뷰어
 } as const
 
 export type IconProps = {
+  ref?: React.Ref<SVGSVGElement>
   name: IconName
   size?: keyof typeof SIZE_CLASS
   /** 단독으로 의미를 전달할 때만 넘긴다. 없으면 장식으로 간주해 숨긴다. */
@@ -51,9 +52,10 @@ export type IconProps = {
   className?: string
 }
 
-export function Icon({ name, size = 'sm', label, className }: IconProps) {
+export function Icon({ name, size = 'sm', label, className, ref }: IconProps) {
   return (
     <svg
+      ref={ref}
       className={cn(SIZE_CLASS[size], 'shrink-0', className)}
       role={label ? 'img' : undefined}
       aria-label={label}

@@ -14,8 +14,7 @@ export type SessionStatus = 'booting' | 'authenticated' | 'anonymous'
 type SessionState = {
   status: SessionStatus
   user: SessionUser | null
-  mediaExpiresAt: string | null
-  setAuthenticated: (user: SessionUser, mediaExpiresAt: string | null) => void
+  setAuthenticated: (user: SessionUser) => void
   setAnonymous: () => void
   updateUser: (user: SessionUser) => void
 }
@@ -23,18 +22,17 @@ type SessionState = {
 export const useSessionStore = create<SessionState>((set) => ({
   status: 'booting',
   user: null,
-  mediaExpiresAt: null,
 
-  setAuthenticated: (user, mediaExpiresAt) => {
+  setAuthenticated: (user) => {
     // 다음 부팅에서 세션 확인과 전시 조회를 병렬로 시작하기 위한 마커다(§8.2).
     localStore.set(STORAGE_KEYS.authHint, '1')
     localStore.set(STORAGE_KEYS.fontScale, user.fontScale)
-    set({ status: 'authenticated', user, mediaExpiresAt })
+    set({ status: 'authenticated', user })
   },
 
   setAnonymous: () => {
     localStore.remove(STORAGE_KEYS.authHint)
-    set({ status: 'anonymous', user: null, mediaExpiresAt: null })
+    set({ status: 'anonymous', user: null })
   },
 
   updateUser: (user) => {

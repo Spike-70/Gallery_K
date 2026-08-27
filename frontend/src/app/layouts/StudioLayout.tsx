@@ -1,9 +1,11 @@
 import { useEffect } from 'react'
 import { Outlet } from 'react-router-dom'
 
+import { RouteAnnouncer } from '@/app/providers/RouteAnnouncer'
+
 import { actions, status } from '@/shared/config/messages'
 import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus'
-import { ErrorState } from '@/shared/ui'
+import { ErrorState, TopBackSlot } from '@/shared/ui'
 
 /**
  * 관리자 공통 레이아웃 — 프런트엔드 아키텍처 문서 §3
@@ -24,6 +26,7 @@ export function StudioLayout() {
   return (
     <div className="min-h-screen bg-canvas">
       <main id="gk-main" tabIndex={-1} className="gk-container-studio py-6 focus:outline-none">
+        <TopBackSlot className="-ml-3 mb-2" />
         {online ? (
           <Outlet />
         ) : (
@@ -33,6 +36,7 @@ export function StudioLayout() {
             onRetry={() => window.location.reload()}
           />
         )}
+        <RouteAnnouncer />
       </main>
     </div>
   )

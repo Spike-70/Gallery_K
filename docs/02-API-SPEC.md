@@ -6,7 +6,7 @@
 | **작성일** | 2026-08-27 |
 | **상위 문서** | `docs/PRD.md` v1.1, `docs/01-DATABASE-MODEL.md` v1.0 |
 | **런타임** | AWS Chalice (API Gateway REST + Lambda) |
-| **기준 URL** | `https://{도메인}/api/v1` |
+| **기준 URL** | `https://{도메인}/api` |
 | **상태** | 확정 (구현 기준선) |
 
 ---
@@ -31,7 +31,7 @@
 
 | 항목 | 규약 |
 |---|---|
-| 버전 | 경로 프리픽스 `/api/v1`. 파괴적 변경 시에만 `v2`를 연다 |
+| 프리픽스 | `/api` 하나뿐이다. CloudFront가 정적 자산과 API의 오리진을 가르는 데 필요한 최소 경로이며, 버전 프리픽스는 두지 않는다 |
 | 경로 | 소문자 `kebab-case` 복수 명사. 동사는 하위 액션 세그먼트로만 (`/exhibitions/{date}/hide`) |
 | 경로 변수 | 전시는 **날짜**(`YYYY-MM-DD`)로 식별한다. 큐레이터에게 전시의 자연키는 날짜이고 URL 가독성이 운영 실수를 줄인다. 그림·회원은 UUID |
 | 필드명 | `snake_case`. 프런트엔드는 API 계층 경계에서만 이를 다루고 도메인 타입으로 변환한다 |
@@ -63,6 +63,16 @@
 | `error` | object | ● | §2.5 |
 
 성공·실패의 키 집합이 **완전히 동일**하다. 프런트엔드는 `success` 하나만 보고 분기하며, 타입 정의도 판별 유니온 하나로 끝난다.
+
+**봉투 규약의 예외는 셋뿐이다.**
+
+| 예외 | 응답 | 이유 |
+|---|---|---|
+| `304 Not Modified`(§2.9) | 본문 없음 | 조건부 요청의 정의상 본문을 보내지 않는다 |
+| `GET /auth/social/{provider}/start`(§6.12) | `302` + `Location` | 브라우저 내비게이션의 종착지다. 응답의 본체가 헤더다 |
+| `GET /auth/social/{provider}/callback`(§6.13) | `302` + `Location` | 동상 |
+
+셋 다 **계약 테스트가 이름으로 면제**한다. 면제 목록에 없는 새 경로가 봉투를 벗어나면 빌드가 실패한다.
 
 ### 2.3 `meta` 구조
 
@@ -151,7 +161,9 @@
 | 갱신 | 만료 30일 이내이면 응답에서 **자동 재발급**한다(슬라이딩 세션). 클라이언트는 아무 것도 하지 않는다 |
 | 무효화 | `app_user.token_version`과 클레임 `tv`가 다르면 즉시 거부(`401 AUTH_SESSION_REVOKED`) |
 | CSRF | `SameSite=Lax` + 변경 요청에 `X-Requested-With: gallery-k` 헤더 필수. 헤더 없으면 `403 CSRF_HEADER_MISSING` |
-| 미디어 | CloudFront 서명 쿠키 3종(`CloudFront-Policy`·`-Signature`·`-Key-Pair-Id`). §6.3 |
+| 미디어 | 별도 자격증명 없음. 이미지 URL 자체가 만료 있는 presigned GET URL이다. §6.16 |
+| 소셜 로그인 | OAuth 2.0 Authorization Code + PKCE. **리다이렉트 방식만 쓴다**(팝업·iframe 금지). 성립 후에는 위 `gk_session` 쿠키 하나로 수렴하며, 제공자 토큰은 저장하지 않는다. 상세는 `08-SOCIAL-AUTH.md` |
+| 소셜 임시 쿠키 | `gk_oauth`(인가 왕복용 `state`·PKCE·nonce) · `gk_oauth_link`(연결 티켓). 둘 다 `HttpOnly; SameSite=Lax`, TTL 10분, 사용 즉시 삭제 |
 
 **권한 등급**
 
@@ -238,7 +250,7 @@
 | `height` | integer | Y | 원본 픽셀 높이 |
 | `aspect_ratio` | number | Y | `width/height`. 소수점 4자리. 레이아웃 시프트 방지용 |
 
-URL은 CloudFront 경로이며 **서명 쿠키가 있어야 열린다**(§6.3). URL 자체는 안정적이므로 CDN·브라우저 캐시가 유효하다.
+URL은 **응답 시점에 발급되는 presigned GET URL**이며 만료가 있다(§6.10). 응답 본문은 캐시하지 않고, 이미지 바이트만 브라우저·CDN 캐시가 받는다.
 
 ### 3.2 `ArtworkSummary` — 그리드용 그림 요약
 
@@ -248,7 +260,7 @@ URL은 CloudFront 경로이며 **서명 쿠키가 있어야 열린다**(§6.3). 
 | `position` | integer | N | 1–12 |
 | `artist` | string | N | C 그리드에는 작가명만 노출(PRD §6.5) |
 | `title` | string | N | 대체 텍스트 구성용. 그리드에 시각적으로 표시하지 않는다 |
-| `image` | ImageSet | N | |
+| `image` | ImageSet | **Y** | 이미지가 아직 `ready`가 아니면 `null`이다. **프런트가 자리표시자를 그린다**(§9.12). 발행된 전시는 12점이 모두 `ready`여야 하므로 관람자 경로에서는 사실상 채워져 있지만, 미리보기는 미완성 상태를 그대로 보여준다 |
 | `is_viewed` | boolean | N | 이 회원이 **이 전시에서** 이미 열어봤는지 |
 
 ### 3.3 `ArtworkDetail` — 그림 상세
@@ -303,6 +315,7 @@ URL은 CloudFront 경로이며 **서명 쿠키가 있어야 열린다**(§6.3). 
 | `notify_enabled` | boolean | N | |
 | `notify_at` | string(HH:MM) | N | |
 | `must_change_password` | boolean | N | true면 프런트가 비밀번호 변경 화면으로 유도 |
+| `has_password` | boolean | N | false면 **소셜로만 로그인하는 계정**이다. D 설정 화면이 비밀번호 변경 항목을 감춘다(소셜 문서 §5.2) |
 | `created_at` | string(datetime) | N | |
 
 ### 3.7 `NoticeItem` — 휴관 공지
@@ -352,6 +365,20 @@ URL은 CloudFront 경로이며 **서명 쿠키가 있어야 열린다**(§6.3). 
 
 `edit_mode`를 **서버가 결정**한다. 백필 금지·이어쓰기 조건은 도메인 규칙이며 프런트가 날짜 비교로 재구현하면 규칙이 두 곳에 존재하게 된다.
 
+### 3.10 `SocialIdentity` — 연결된 외부 계정
+
+| 필드 | 타입 | Null | 설명 |
+|---|---|:---:|---|
+| `id` | string(uuid) | N | |
+| `provider` | string | N | `kakao` \| `google` |
+| `label` | string | N | 화면에 그대로 쓰는 한국어 이름. 예: `카카오` |
+| `email` | string | Y | **항상 null.** `openid` scope만 요청하므로 수집하지 않는다(소셜 문서 §6.1) |
+| `display_name` | string | Y | **항상 null.** 동상 |
+| `linked_at` | string(datetime) | N | |
+| `last_login_at` | string(datetime) | Y | |
+
+**제공자 access token·refresh token은 어떤 응답에도 담기지 않는다.** 로그인이 성립한 뒤 서버가 버린다(소셜 문서 SA-3).
+
 ---
 
 ## 4. 엔드포인트 총람
@@ -363,51 +390,57 @@ URL은 CloudFront 경로이며 **서명 쿠키가 있어야 열린다**(§6.3). 
 | 3 | POST | `/auth/signup` | PUBLIC | 회원가입 | MVP |
 | 4 | POST | `/auth/login` | PUBLIC | 로그인 | MVP |
 | 5 | POST | `/auth/logout` | MEMBER | 로그아웃 | MVP |
-| 6 | GET | `/auth/session` | PUBLIC | 세션 확인 + 미디어 쿠키 재발급 | MVP |
+| 6 | GET | `/auth/session` | PUBLIC | 세션 확인 | MVP |
 | 7 | POST | `/auth/password` | MEMBER | 비밀번호 변경 | MVP |
 | 8 | POST | `/auth/password/reset/request` | PUBLIC | 재설정 인증번호 발송 | v1.1 |
 | 9 | POST | `/auth/password/reset/confirm` | PUBLIC | 인증번호 확인 + 새 비밀번호 | v1.1 |
-| 10 | POST | `/media/session` | MEMBER | CloudFront 서명 쿠키 발급 | MVP |
-| 11 | GET | `/exhibitions/current` | MEMBER | 현재 전시(C 화면) | MVP |
-| 12 | GET | `/exhibitions/{date}` | MEMBER | 특정 발행일 전시 | MVP |
-| 13 | GET | `/exhibitions` | MEMBER | 아카이브 목록(C-3) | MVP |
-| 14 | POST | `/exhibitions/{date}/view` | MEMBER | 입장 기록 | MVP |
-| 15 | GET | `/artworks/{id}` | MEMBER | 그림 상세(C-2) | MVP |
-| 16 | POST | `/artworks/{id}/view` | MEMBER | 그림 열람 기록 | MVP |
-| 17 | GET | `/me` | MEMBER | 내 정보 | MVP |
-| 18 | PATCH | `/me/settings` | MEMBER | 알림·글씨 설정 변경(C-4) | MVP |
-| 19 | DELETE | `/me` | MEMBER | 탈퇴 | MVP |
-| 20 | POST | `/me/push-subscriptions` | MEMBER | 푸시 구독 등록·갱신 | MVP |
-| 21 | GET | `/me/push-subscriptions` | MEMBER | 이 회원의 푸시 구독 목록 | MVP |
-| 22 | DELETE | `/me/push-subscriptions/{id}` | MEMBER | 푸시 구독 해제 | MVP |
-| 23 | GET | `/admin/summary` | CURATOR | B 홈 요약 숫자 | MVP |
-| 24 | GET | `/admin/exhibitions/calendar` | CURATOR | 날짜별 발행 상태(B) | MVP |
-| 25 | GET | `/admin/exhibitions/{date}` | CURATOR | 전시 편집 상태 조회(B-2) | MVP |
-| 26 | PUT | `/admin/exhibitions/{date}` | CURATOR | 제목·테마 저장(B-2-1) | MVP |
-| 27 | POST | `/admin/exhibitions/{date}/hide` | CURATOR | 전시 숨김 | MVP |
-| 28 | POST | `/admin/exhibitions/{date}/unhide` | CURATOR | 숨김 해제 | MVP |
-| 29 | POST | `/admin/exhibitions/{date}/carry-draft` | CURATOR | 드래프트 오늘로 이어쓰기 | MVP |
-| 30 | GET | `/admin/exhibitions/{date}/preview` | CURATOR | 관람자 화면과 동일 렌더용 | MVP |
-| 31 | PUT | `/admin/exhibitions/{date}/artworks/{position}` | CURATOR | 그림 메타 저장(B-2-2) | MVP |
-| 32 | DELETE | `/admin/exhibitions/{date}/artworks/{position}` | CURATOR | 슬롯 비우기 | MVP |
-| 33 | POST | `/admin/exhibitions/{date}/artworks/reorder` | CURATOR | 순서 변경 | MVP |
-| 34 | POST | `/admin/exhibitions/{date}/artworks/upload-urls` | CURATOR | Presigned URL 다중 발급 | MVP |
-| 35 | POST | `/admin/artworks/{id}/image/complete` | CURATOR | 업로드 완료 통지 | MVP |
-| 36 | GET | `/admin/members` | CURATOR | 회원 목록(B-3) | MVP |
-| 37 | POST | `/admin/members` | CURATOR | 대행 가입 | MVP |
-| 38 | POST | `/admin/members/{id}/block` | CURATOR | 차단 | MVP |
-| 39 | POST | `/admin/members/{id}/unblock` | CURATOR | 차단 해제 | MVP |
-| 40 | POST | `/admin/members/{id}/reset-password` | CURATOR | 비밀번호 초기화 | MVP |
-| 41 | GET | `/admin/settings` | CURATOR | 전역 설정 조회 | MVP |
-| 42 | PATCH | `/admin/settings` | CURATOR | 전역 설정 변경(가입 잠금 포함) | MVP |
-| 43 | GET | `/admin/notices` | CURATOR | 공지 목록 | MVP |
-| 44 | POST | `/admin/notices` | CURATOR | 공지 생성 | MVP |
-| 45 | PATCH | `/admin/notices/{id}` | CURATOR | 공지 수정 | MVP |
-| 46 | DELETE | `/admin/notices/{id}` | CURATOR | 공지 취소 | MVP |
-| 47 | GET | `/admin/stats/daily` | CURATOR | 날짜별 입장 현황(B-1) | v1.1 |
-| 48 | GET | `/admin/stats/members` | CURATOR | 회원 검색(B-1 입력) | v1.1 |
-| 49 | GET | `/admin/stats/members/{id}` | CURATOR | 회원별 감상 상세(B-1-1) | v1.1 |
-| 50 | GET | `/system/health` | PUBLIC | 헬스 체크 | MVP |
+| 10 | GET | `/auth/social/providers` | PUBLIC | 켜진 소셜 제공자 목록 | MVP |
+| 11 | GET | `/auth/social/{provider}/start` | PUBLIC | **302** 제공자 인가 화면으로 | MVP |
+| 12 | GET | `/auth/social/{provider}/callback` | PUBLIC | **302** 앱으로(세션 발급 또는 연결 화면) | MVP |
+| 13 | POST | `/auth/social/link` | PUBLIC | 기존 계정에 연결(비밀번호로 소유 증명) | MVP |
+| 14 | POST | `/auth/social/signup` | PUBLIC | 소셜 신규 가입(전화번호+이름) | MVP |
+| 15 | GET | `/exhibitions/current` | MEMBER | 현재 전시(C 화면) | MVP |
+| 16 | GET | `/exhibitions/{date}` | MEMBER | 특정 발행일 전시 | MVP |
+| 17 | GET | `/exhibitions` | MEMBER | 아카이브 목록(C-3) | MVP |
+| 18 | POST | `/exhibitions/{date}/view` | MEMBER | 입장 기록 | MVP |
+| 19 | GET | `/artworks/{id}` | MEMBER | 그림 상세(C-2) | MVP |
+| 20 | POST | `/artworks/{id}/view` | MEMBER | 그림 열람 기록 | MVP |
+| 21 | GET | `/me` | MEMBER | 내 정보 | MVP |
+| 22 | PATCH | `/me/settings` | MEMBER | 알림·글씨 설정 변경(C-4) | MVP |
+| 23 | DELETE | `/me` | MEMBER | 탈퇴 | MVP |
+| 24 | POST | `/me/push-subscriptions` | MEMBER | 푸시 구독 등록·갱신 | MVP |
+| 25 | GET | `/me/push-subscriptions` | MEMBER | 이 회원의 푸시 구독 목록 | MVP |
+| 26 | DELETE | `/me/push-subscriptions/{id}` | MEMBER | 푸시 구독 해제 | MVP |
+| 27 | GET | `/me/social-identities` | MEMBER | 연결된 소셜 계정 목록 | MVP |
+| 28 | DELETE | `/me/social-identities/{identity_id}` | MEMBER | 소셜 연결 해제 | MVP |
+| 29 | GET | `/admin/summary` | CURATOR | B 홈 요약 숫자 | MVP |
+| 30 | GET | `/admin/exhibitions/calendar` | CURATOR | 날짜별 발행 상태(B) | MVP |
+| 31 | GET | `/admin/exhibitions/{date}` | CURATOR | 전시 편집 상태 조회(B-2) | MVP |
+| 32 | PUT | `/admin/exhibitions/{date}` | CURATOR | 제목·테마 저장(B-2-1) | MVP |
+| 33 | POST | `/admin/exhibitions/{date}/hide` | CURATOR | 전시 숨김 | MVP |
+| 34 | POST | `/admin/exhibitions/{date}/unhide` | CURATOR | 숨김 해제 | MVP |
+| 35 | POST | `/admin/exhibitions/{date}/carry-draft` | CURATOR | 드래프트 오늘로 이어쓰기 | MVP |
+| 36 | GET | `/admin/exhibitions/{date}/preview` | CURATOR | 관람자 화면과 동일 렌더용 | MVP |
+| 37 | PUT | `/admin/exhibitions/{date}/artworks/{position}` | CURATOR | 그림 메타 저장(B-2-2) | MVP |
+| 38 | DELETE | `/admin/exhibitions/{date}/artworks/{position}` | CURATOR | 슬롯 비우기 | MVP |
+| 39 | POST | `/admin/exhibitions/{date}/artworks/reorder` | CURATOR | 순서 변경 | MVP |
+| 40 | POST | `/admin/exhibitions/{date}/artworks/upload-urls` | CURATOR | presigned POST 자격 다중 발급 | MVP |
+| 41 | POST | `/admin/artworks/{id}/image/complete` | CURATOR | 업로드 완료 통지 + 동기 이미지 처리 | MVP |
+| 42 | GET | `/admin/members` | CURATOR | 회원 목록(B-3) | MVP |
+| 43 | POST | `/admin/members` | CURATOR | 대행 가입 | MVP |
+| 44 | POST | `/admin/members/{id}/block` | CURATOR | 차단 | MVP |
+| 45 | POST | `/admin/members/{id}/unblock` | CURATOR | 차단 해제 | MVP |
+| 46 | POST | `/admin/members/{id}/reset-password` | CURATOR | 비밀번호 초기화 | MVP |
+| 47 | GET | `/admin/settings` | CURATOR | 전역 설정 조회 | MVP |
+| 48 | PATCH | `/admin/settings` | CURATOR | 전역 설정 변경(가입 잠금 포함) | MVP |
+| 49 | GET | `/admin/notices` | CURATOR | 공지 목록 | MVP |
+| 50 | POST | `/admin/notices` | CURATOR | 공지 생성 | MVP |
+| 51 | PATCH | `/admin/notices/{id}` | CURATOR | 공지 수정 | MVP |
+| 52 | DELETE | `/admin/notices/{id}` | CURATOR | 공지 취소 | MVP |
+| 53 | GET | `/admin/stats/daily` | CURATOR | 날짜별 입장 현황(B-1) | v1.1 |
+| 54 | GET | `/admin/stats/members` | CURATOR | 회원 검색(B-1 입력) | v1.1 |
+| 55 | GET | `/admin/stats/members/{id}` | CURATOR | 회원별 감상 상세(B-1-1) | v1.1 |
+| 56 | GET | `/system/health` | PUBLIC | 헬스 체크 | MVP |
 
 v1.1 표시 엔드포인트도 **경로와 스키마를 MVP 시점에 확정**한다. 프런트엔드가 나중에 붙일 때 계약 협의를 다시 하지 않기 위함이다.
 
@@ -449,10 +482,19 @@ v1.1 표시 엔드포인트도 **경로와 스키마를 MVP 시점에 확정**�
 | `PASSWORD_CURRENT_MISMATCH` | 401 | 현재 비밀번호가 맞지 않습니다. | false | — |
 | `RESET_CODE_INVALID` | 422 | 인증번호가 맞지 않습니다. | false | `attempts_left` |
 | `RESET_CODE_EXPIRED` | 422 | 인증번호가 만료되었습니다. 다시 받아 주세요. | false | — |
+| `SOCIAL_PROVIDER_UNKNOWN` | 404 | 지원하지 않는 로그인 방식입니다. | false | `provider` |
+| `SOCIAL_DISABLED` | 503 | 지금은 이 방식으로 로그인할 수 없습니다. | true | `provider` |
+| `SOCIAL_STATE_INVALID` | 400 | 로그인 요청이 만료되었습니다. 처음부터 다시 시도해 주세요. | false | — |
+| `SOCIAL_EXCHANGE_FAILED` | 502 | 로그인 제공자와 연결하지 못했습니다. 잠시 후 다시 시도해 주세요. | true | `provider` |
+| `SOCIAL_LINK_EXPIRED` | 400 | 연결 시간이 지났습니다. 처음부터 다시 시도해 주세요. | false | — |
+| `SOCIAL_ALREADY_LINKED` | 409 | 이미 다른 계정에 연결된 소셜 계정입니다. | false | — |
+| `SOCIAL_LAST_IDENTITY` | 409 | 마지막 로그인 수단은 해제할 수 없습니다. 비밀번호를 먼저 설정해 주세요. | false | — |
 
 > **클라이언트 전용 코드** — `NETWORK_OFFLINE`, `CLIENT_TIMEOUT`, `CHUNK_LOAD_FAILED`는 서버가 반환하지 않으며 프런트엔드 HTTP 클라이언트가 생성한다. 코드 이름 공간을 공유하되 서버 카탈로그에는 등록하지 않는다(프런트 문서 §7.1).
 
-**계정 존재 여부를 노출하지 않는다**(PRD §6.2). 미가입 번호 로그인, 차단 회원 로그인, 비밀번호 불일치는 **모두 `AUTH_INVALID_CREDENTIALS`**로 동일하게 응답한다. 비밀번호 재설정 요청도 미가입 번호에 성공 응답을 준다.
+**계정 존재 여부를 노출하지 않는다**(PRD §6.2). 미가입 번호 로그인, 차단 회원 로그인, 비밀번호 불일치는 **모두 `AUTH_INVALID_CREDENTIALS`**로 동일하게 응답한다. 비밀번호 재설정 요청도 미가입 번호에 성공 응답을 준다. §6.14 소셜 연결도 같은 규칙을 따른다.
+
+`SOCIAL_ALREADY_LINKED`는 **어느 회원에게 연결되어 있는지 알려주지 않는다.** 소셜 계정을 가진 사람이 우리 서비스의 회원 명단을 조회하는 수단이 되면 안 된다.
 
 ### 5.3 전시·그림
 
@@ -533,7 +575,7 @@ A 화면이 필요로 하는 모든 것을 한 번에 준다. 비로그인 상�
 | `name` | string | ● | 1–20자 | |
 | `agreed_terms` | boolean | ● | `true`만 허용 | 이용·개인정보 처리 동의 1건 |
 
-**응답 `data`** — `{ "user": SessionUser, "is_first_login": true }` + `Set-Cookie: gk_session=...` + 미디어 서명 쿠키 3종
+**응답 `data`** — `{ "user": SessionUser, "is_first_login": true }` + `Set-Cookie: gk_session=...`
 
 가입 성공 시 **자동 로그인**되어 C 갤러리로 직행할 수 있다(PRD §6.4). 알림 권한 요청은 프런트가 가입 완료 직후 수행하며, 이 API는 관여하지 않는다.
 
@@ -552,7 +594,7 @@ A 화면이 필요로 하는 모든 것을 한 번에 준다. 비로그인 상�
 | `phone` | string | ● | `^01[0-9]{8,9}$` |
 | `password` | string | ● | 1–64자 |
 
-**응답 `data`** — `{ "user": SessionUser }` + 세션 쿠키 + 미디어 쿠키
+**응답 `data`** — `{ "user": SessionUser }` + 세션 쿠키
 
 **오류** — `AUTH_INVALID_CREDENTIALS`(401), `AUTH_TOO_MANY_ATTEMPTS`(429), `VALIDATION_FAILED`(422)
 
@@ -560,13 +602,13 @@ A 화면이 필요로 하는 모든 것을 한 번에 준다. 비로그인 상�
 
 ### 6.5 `POST /auth/logout`
 
-**권한** `MEMBER` · **응답 `data`** `{}` · 세션 쿠키·미디어 쿠키를 만료시키는 `Set-Cookie`를 반환한다.
+**권한** `MEMBER` · **응답 `data`** `{}` · 세션 쿠키를 만료시키는 `Set-Cookie`를 반환한다.
 
 ### 6.6 `GET /auth/session` — 세션 확인 및 쿠키 갱신
 
 **권한** `PUBLIC` (비로그인이어도 200)
 
-앱 부팅 시 최초 1회 호출한다. 유효 세션이 있으면 사용자 정보와 **갱신된 미디어 서명 쿠키**를 함께 내린다.
+앱 부팅 시 최초 1회 호출한다. 유효 세션이 있으면 사용자 정보를 내리고 세션 쿠키를 갱신한다.
 
 **응답 `data`**
 
@@ -574,7 +616,6 @@ A 화면이 필요로 하는 모든 것을 한 번에 준다. 비로그인 상�
 |---|---|:---:|---|
 | `is_authenticated` | boolean | N | |
 | `user` | SessionUser | Y | 미인증이면 `null` |
-| `media_session_expires_at` | string(datetime) | Y | 미디어 쿠키 만료 시각. 클라이언트는 만료 10분 전 `/media/session`을 호출한다 |
 
 ### 6.7 `POST /auth/password` — 비밀번호 변경
 
@@ -606,24 +647,68 @@ A 화면이 필요로 하는 모든 것을 한 번에 준다. 비로그인 상�
 
 **오류** — `RESET_CODE_INVALID`(422, `details.attempts_left`), `RESET_CODE_EXPIRED`(422), `PASSWORD_POLICY_VIOLATION`(422)
 
-### 6.10 `POST /media/session` — 미디어 서명 쿠키 발급
+### 6.11 `GET /auth/social/providers` — 켜진 제공자 목록
 
-**권한** `MEMBER`
+**응답 `data`** — `{ providers: [{ provider, label, start_url }] }`
 
-이미지 S3 버킷은 비공개이며 CloudFront 서명으로만 접근한다(PRD §8.4). 그림마다 서명 URL을 만들면 12장 × 3종 = 36회 서명이 매 요청마다 필요하고 CDN 캐시 키도 흔들린다. 대신 **경로 와일드카드(`/media/artworks/*`)에 대한 서명 쿠키를 세션당 1회 발급**한다.
+`client_id`가 설정된 제공자만 담긴다. **화면이 환경변수를 알 필요가 없다** — 목록이 비어 있으면 A-1에 소셜 영역 자체를 그리지 않는다.
 
-**응답 `data`**
+### 6.12 `GET /auth/social/{provider}/start` — 인가 요청 시작
 
-| 필드 | 타입 | 설명 |
-|---|---|---|
-| `expires_at` | string(datetime) | 쿠키 만료 시각(기본 6시간 후) |
-| `resource_prefix` | string | 서명이 적용된 경로 접두 |
+**응답** — `302` + `Location: {제공자 인가 URL}`. **봉투를 쓰지 않는다**(§2.2의 두 번째 예외).
 
-**부수효과** — `Set-Cookie` 3종(`CloudFront-Policy`, `CloudFront-Signature`, `CloudFront-Key-Pair-Id`). 속성은 `Secure; HttpOnly; SameSite=Lax; Domain={루트 도메인}; Path=/media/`.
+**쿼리** — `next`(선택). 로그인 후 돌아갈 앱 내부 경로. `/`로 시작하고 `//`·`\`로 시작하지 않는 값만 허용하며, 그 외는 `/gallery`로 떨어뜨린다(열린 리다이렉트 방어).
 
-**대체 경로** — 쿠키가 차단되는 환경(사파리 ITP의 특정 조합, 임베드 뷰)을 위해 `GET /artworks/{id}` 응답에 `?sig=` 형태의 서명 URL을 내릴 수 있는 서버 스위치(`app_setting.media_signing_mode`)를 둔다. 기본값은 `cookie`다.
+서버가 `state`·`code_verifier`(PKCE S256)·`nonce`를 만들어 **서명 쿠키 `gk_oauth`**(HttpOnly, `SameSite=Lax`, TTL 10분)에 담고, 인가 URL에는 `state`와 `code_challenge`만 싣는다.
 
-**오류** — `AUTH_REQUIRED`(401)
+### 6.13 `GET /auth/social/{provider}/callback` — 인가 코드 수신
+
+**응답** — `302`. 성공이면 `Location: {next}` + 세션 쿠키, 미연결이면 `Location: /auth/link` + 연결 티켓 쿠키.
+
+| 단계 | 실패 시 |
+|---|---|
+| `state` 대조(URL ↔ 쿠키) | `302 /login?social_error=SOCIAL_STATE_INVALID` |
+| 코드 → 토큰 교환(`code_verifier` 동봉) | `302 /login?social_error=SOCIAL_EXCHANGE_FAILED` |
+| `id_token` 서명·`iss`·`aud`·`exp`·`nonce` 검증 | 동상 |
+| 제공자 프로필 조회 | 동상 |
+| 사용자가 동의 화면에서 취소 | `302 /login` (오류 없이 조용히) |
+
+**모든 실패가 302로 끝나는 이유** — 이 경로는 브라우저 주소창이 향하는 곳이다. JSON 오류 봉투를 내리면 사용자는 흰 화면의 영어 덩어리를 본다. 화면이 `social_error` 코드를 §5.2의 한국어 문구로 번역해 로그인 화면 상단 배너에 띄운다.
+
+### 6.14 `POST /auth/social/link` — 기존 계정에 연결
+
+**전제** — 연결 티켓 쿠키(`gk_oauth_link`). 없거나 만료면 `SOCIAL_LINK_EXPIRED`.
+
+**요청 바디** — `phone`(필수), `password`(필수)
+
+**응답 `data`** — `{ user }` + 세션 쿠키. 이후 그 소셜로 바로 로그인된다.
+
+**비밀번호를 요구하는 이유** — 전화번호만으로 연결하면 남의 번호를 적어 계정을 가져갈 수 있다. 연결은 **소유 증명**을 거쳐야 한다.
+
+**오류** — `AUTH_INVALID_CREDENTIALS`(401 — 미가입·비밀번호 불일치·차단을 구분하지 않는다), `AUTH_TOO_MANY_ATTEMPTS`(429), `SOCIAL_ALREADY_LINKED`(409), `SOCIAL_LINK_EXPIRED`(400)
+
+### 6.15 `POST /auth/social/signup` — 소셜 신규 가입
+
+**전제** — 연결 티켓 쿠키.
+
+**요청 바디** — `phone`(필수), `name`(필수, 1–20자), `agreed_terms`(필수, `true`)
+
+**응답 `data`** — `{ user, is_first_login: true }` + 세션 쿠키
+
+생성되는 계정은 `password_hash = NULL`, `created_via = 'social'`이다. **`signup_open`이 꺼져 있으면 만들지 않는다** — 가입 잠금은 외부 유입을 막는 장치이고, 소셜이 그 잠금의 뒷문이 되면 폐쇄형 서비스라는 전제가 깨진다.
+
+**오류** — `SIGNUP_CLOSED`(403), `SIGNUP_PHONE_TAKEN`(409 — 이 번호는 §6.14로 연결해야 한다), `SOCIAL_ALREADY_LINKED`(409), `SOCIAL_LINK_EXPIRED`(400)
+
+### 6.16 미디어 접근 규약
+
+이미지 버킷은 비공개이며 **접근 수단은 presigned URL 하나뿐이다.** 전용 엔드포인트는 두지 않는다.
+
+| 방향 | 방식 |
+|---|---|
+| 다운로드 | 이미지를 포함하는 응답이 **presigned GET URL**을 만들어 내린다. 유효기간은 전역 설정 값(`media_url_ttl_seconds`)을 따른다 |
+| 업로드 | §9.8의 **presigned POST** 자격을 발급받아 클라이언트가 S3에 직접 올린다 |
+
+서명 쿠키·키페어·전용 세션 갱신 API를 쓰지 않는다. 클라이언트가 관리해야 할 미디어 자격 상태가 없어지고, 만료된 URL은 화면을 다시 불러오면 그대로 해소된다.
 
 ---
 
@@ -741,7 +826,7 @@ C-2 진입 시 호출한다. 스와이프로 빠르게 넘길 때 과도한 호�
 
 **요청 바디** — `{ "confirm": true }` (필수). 실수 방지를 위해 명시적 확인 필드를 요구한다.
 
-**응답 `data`** — `{}` + 세션·미디어 쿠키 만료
+**응답 `data`** — `{}` + 세션 쿠키 만료
 
 DB 문서 §10.1의 트랜잭션을 수행한다. **큐레이터 계정은 탈퇴할 수 없다** — `MEMBER_CURATOR_IMMUTABLE`(403).
 
@@ -779,6 +864,18 @@ DB 문서 §10.1의 트랜잭션을 수행한다. **큐레이터 계정은 탈�
 **권한** `MEMBER` · **응답 `data`** `{}`
 
 해당 단말 구독만 해제한다. `notify_enabled`는 건드리지 않는다 — 다른 단말에서는 계속 받을 수 있어야 한다. 전면 해제는 `PATCH /me/settings`의 `notify_enabled=false`다.
+
+### 8.7 `GET /me/social-identities` — 연결된 소셜 계정
+
+**권한** `MEMBER` · **응답 `data`** — `{ identities: SocialIdentity[], can_unlink: boolean }`
+
+`can_unlink`가 `false`면 화면이 해제 버튼을 비활성화한다. 비밀번호가 없고 연결이 하나뿐인 상태이며, 해제하면 로그인 수단이 0이 된다.
+
+### 8.8 `DELETE /me/social-identities/{identity_id}` — 연결 해제
+
+**권한** `MEMBER` · **응답 `data`** `{}`
+
+**오류** — `NOT_FOUND`(404 — 남의 연결 id를 넣어 존재를 떠보는 것도 부재로 답한다), `SOCIAL_LAST_IDENTITY`(409)
 
 ---
 
@@ -848,7 +945,7 @@ PRD 부록 B가 지정한 두 숫자만 반환한다.
 | `artwork_id` | string(uuid) | Y | 비어 있으면 `null` |
 | `title` / `artist` / `year_text` / `description` | string | Y | |
 | `collection` / `source_url` | string | Y | |
-| `image_status` | string | N | `empty`\|`uploading`\|`processing`\|`ready`\|`failed` |
+| `image_status` | string | N | `empty`\|`uploading`\|`ready`\|`failed` |
 | `image` | ImageSet | Y | `ready`일 때만 |
 | `image_error_code` | string | Y | |
 | `is_complete` | boolean | N | |
@@ -914,9 +1011,9 @@ PRD 부록 B가 지정한 두 숫자만 반환한다.
 
 **응답 `data`** — `{ "slots": AdminArtworkSlot[] }` (12개)
 
-### 9.8 `POST /admin/exhibitions/{date}/artworks/upload-urls` — Presigned URL 발급
+### 9.8 `POST /admin/exhibitions/{date}/artworks/upload-urls` — presigned POST 자격 발급
 
-PRD §9.2에 따라 20MB 파일은 API Gateway를 통과할 수 없으므로 클라이언트가 S3로 직접 올린다.
+20MB 파일은 API Gateway를 통과할 수 없으므로 클라이언트가 S3로 직접 올린다. **presigned POST** 방식을 쓴다 — 크기 상한·콘텐츠 타입·키 접두를 서버가 서명한 정책으로 못박을 수 있다.
 
 **요청 바디**
 
@@ -934,9 +1031,9 @@ PRD §9.2에 따라 20MB 파일은 API Gateway를 통과할 수 없으므로 클
 |---|---|---|
 | `uploads[].position` | integer | |
 | `uploads[].artwork_id` | string(uuid) | 슬롯에 대응하는 그림 행. 없으면 이 시점에 생성된다 |
-| `uploads[].upload_url` | string | S3 Presigned PUT URL |
-| `uploads[].method` | string | `PUT` |
-| `uploads[].headers` | object | 업로드 시 그대로 사용할 헤더(`Content-Type` 등) |
+| `uploads[].upload_url` | string | S3 업로드 엔드포인트 |
+| `uploads[].method` | string | `POST` |
+| `uploads[].fields` | object | 서명 정책 필드 묶음. **순서대로 폼에 담고 파일을 마지막에 붙인다** |
 | `uploads[].object_key` | string | |
 | `uploads[].expires_at` | string(datetime) | 기본 15분 |
 
@@ -948,13 +1045,13 @@ PRD §9.2에 따라 20MB 파일은 API Gateway를 통과할 수 없으므로 클
 
 ### 9.9 `POST /admin/artworks/{artwork_id}/image/complete` — 업로드 완료 통지
 
-S3 이벤트가 주 경로이고 이 API는 **보조 경로**다. 클라이언트가 PUT 성공 직후 호출하면 파이프라인을 즉시 시작해 대기 시간을 줄인다. 중복 호출은 무해하다(이미 `processing`/`ready`면 현재 상태만 반환).
+클라이언트가 업로드 성공 직후 호출한다. 서버가 **이 요청 안에서 동기로** 원본을 검증·변환하고 `ready`로 전환한 뒤 응답한다. 중복 호출은 무해하다(이미 `ready`면 현재 상태만 반환).
 
 **요청 바디** — `{ "object_key": string }`
 
-**응답 `data`** — `{ "artwork_id", "image_status", "estimated_ready_in_seconds": integer }`
+**응답 `data`** — `{ "artwork_id", "image_status", "images": ImageSet }`
 
-**폴링 규약** — 프런트는 `image_status`가 `processing`인 슬롯에 대해 `GET /admin/exhibitions/{date}`를 **2초 간격, 최대 60초** 폴링한다. 60초 초과 시 "처리가 지연되고 있습니다" 안내와 재시도 버튼을 노출한다.
+**폴링하지 않는다.** 응답이 곧 처리 완료 통지다. 실패는 `image_status=failed`와 사유 코드로 돌아오며 재업로드로만 복구한다.
 
 ### 9.10 `POST /admin/exhibitions/{date}/hide` · `/unhide` — 전시 숨김
 
@@ -1086,7 +1183,7 @@ S3 이벤트가 주 경로이고 이 API는 **보조 경로**다. 클라이언�
 
 ### 11.1 앱 부팅 → 갤러리 입장
 
-1. `GET /auth/session` — 세션·미디어 쿠키 확보
+1. `GET /auth/session` — 세션 확보
 2. `GET /public/landing` — A 화면 렌더
 3. (입장 버튼) → `GET /exhibitions/current` — C 화면 렌더
 4. 렌더 완료 후 `POST /exhibitions/{date}/view` — 입장 기록 (실패해도 화면에 영향 없음, 재시도 1회)
@@ -1096,13 +1193,11 @@ C 화면 진입까지 **네트워크 왕복 3회**이며, 2·3은 세션 확인 
 
 ### 11.2 그림 업로드
 
-1. `POST /admin/exhibitions/{date}/artworks/upload-urls` — N개 슬롯 URL 발급, 상태 `uploading`
-2. 클라이언트 → S3 직접 `PUT` (동시 3개 제한)
-3. `POST /admin/artworks/{id}/image/complete` — 각 파일 완료 즉시
-4. S3 이벤트 또는 3의 트리거로 리사이즈 Lambda 실행 → 상태 `ready`
-5. 프런트가 `GET /admin/exhibitions/{date}` 폴링(2초, 최대 60초)으로 `ready` 확인
-6. `PUT /admin/exhibitions/{date}/artworks/{position}` — 메타데이터 입력·저장
-7. 12슬롯 완성 + 제목·테마 충족 시 응답의 `published_now=true`
+1. `POST /admin/exhibitions/{date}/artworks/upload-urls` — N개 슬롯 자격 발급, 상태 `uploading`
+2. 클라이언트 → S3 직접 `POST` (동시 3개 제한)
+3. `POST /admin/artworks/{id}/image/complete` — 각 파일 완료 즉시. 서버가 동기 변환 후 `ready`로 응답
+4. `PUT /admin/exhibitions/{date}/artworks/{position}` — 메타데이터 입력·저장
+5. 12슬롯 완성 + 제목·테마 충족 시 응답의 `published_now=true`
 
 ### 11.3 발행과 알림
 
@@ -1120,7 +1215,7 @@ C 화면 진입까지 **네트워크 왕복 3회**이며, 2·3은 세션 확인 
 | **A-1** | `POST /admin/exhibitions/{date}` | `PUT /admin/exhibitions/{date}` | 자동 임시저장은 동일 리소스의 전체 상태 갱신이며 재시도가 안전해야 한다 |
 | **A-2** | `POST /admin/artworks/upload-url` (단수) | `POST /admin/exhibitions/{date}/artworks/upload-urls` (복수, 전시 하위) | 다중 선택 업로드(PRD §6.10)가 1급 기능이므로 배치 발급이 기본이다. 전시 하위 경로가 권한·검증 문맥을 단순화한다 |
 | **A-3** | (없음) | `GET /public/landing` 신설 | A 화면이 전시 제목·공지·가입 가능 여부·관리자 여부를 각각 요청하면 4회 왕복이 된다 |
-| **A-4** | (없음) | `POST /media/session` 신설 | 서명 URL을 응답마다 만들면 12×3 서명 비용과 CDN 캐시 무효화가 발생한다 |
+| **A-4** | (없음) | 미디어 접근을 presigned URL 단일 수단으로 통일 | 서명 쿠키·키페어·전용 세션 API가 사라져 클라이언트가 관리할 미디어 자격 상태가 없어진다 |
 | **A-5** | `GET /exhibitions/current`이 입장 기록도 겸함(암시) | `POST /exhibitions/{date}/view` 분리 | GET의 부수효과는 PWA 캐시·프리페치와 충돌한다 |
 | **A-6** | `POST /admin/settings/signup` | `PATCH /admin/settings` 통합 | 조정 대상 설정이 10종이며 화면은 하나다 |
 | **A-7** | `GET/POST /admin/notice` (단수) | `/admin/notices` 컬렉션 + `{id}` | 휴가 일정이 여러 건 예약될 수 있다 |

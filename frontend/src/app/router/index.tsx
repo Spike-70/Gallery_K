@@ -1,10 +1,10 @@
-import { lazy } from 'react'
 import { createBrowserRouter } from 'react-router-dom'
 
 import { GalleryLayout } from '@/app/layouts/GalleryLayout'
 import { PlainLayout } from '@/app/layouts/PlainLayout'
 import { StudioLayout } from '@/app/layouts/StudioLayout'
 import { RedirectIfAuthed, RequireAuth, RequireCurator } from '@/app/router/guards'
+import { lazyRoute } from '@/app/router/lazyRoute'
 import { paths, routePatterns } from '@/app/router/paths'
 import { shouldPrefetch } from '@/shared/lib/platform'
 
@@ -29,54 +29,57 @@ import { NotFoundPage, RouteErrorPage } from '@/features/errors'
  * 인증 화면은 한 기능 폴더(= 하나의 공개 표면)를 공유하므로 통째로 지연 로드한다.
  * 대신 A 첫 화면이 뜬 뒤 유휴 시간에 이 청크를 미리 받아 A-1 진입을 즉시로 만든다(§9.4).
  */
-const LoginPage = lazy(() =>
+const LoginPage = lazyRoute(() =>
   import('@/features/auth').then((module) => ({ default: module.LoginPage })),
 )
-const SignupPage = lazy(() =>
+const SignupPage = lazyRoute(() =>
   import('@/features/auth').then((module) => ({ default: module.SignupPage })),
 )
-const PasswordResetPage = lazy(() =>
+const PasswordResetPage = lazyRoute(() =>
   import('@/features/auth').then((module) => ({ default: module.PasswordResetPage })),
 )
-const PasswordChangePage = lazy(() =>
+const PasswordChangePage = lazyRoute(() =>
   import('@/features/auth').then((module) => ({ default: module.PasswordChangePage })),
 )
-const ExhibitionThemePage = lazy(() =>
+const SocialLinkPage = lazyRoute(() =>
+  import('@/features/auth').then((module) => ({ default: module.SocialLinkPage })),
+)
+const ExhibitionThemePage = lazyRoute(() =>
   import('@/features/exhibition-theme').then((module) => ({ default: module.ExhibitionThemePage })),
 )
-const ArchivePage = lazy(() =>
+const ArchivePage = lazyRoute(() =>
   import('@/features/archive').then((module) => ({ default: module.ArchivePage })),
 )
-const SettingsPage = lazy(() =>
+const SettingsPage = lazyRoute(() =>
   import('@/features/settings').then((module) => ({ default: module.SettingsPage })),
 )
 
 // 지연 로드 — 관리자(admin 청크)
-const AdminDashboardPage = lazy(() =>
+const AdminDashboardPage = lazyRoute(() =>
   import('@/features/admin/dashboard').then((module) => ({ default: module.AdminDashboardPage })),
 )
-const ExhibitionEditorPage = lazy(() =>
+const ExhibitionEditorPage = lazyRoute(() =>
   import('@/features/admin/exhibition-editor').then((module) => ({ default: module.ExhibitionEditorPage })),
 )
-const ThemeEditorPage = lazy(() =>
+const ThemeEditorPage = lazyRoute(() =>
   import('@/features/admin/exhibition-editor').then((module) => ({ default: module.ThemeEditorPage })),
 )
-const ArtworkEditorPage = lazy(() =>
+const ArtworkEditorPage = lazyRoute(() =>
   import('@/features/admin/exhibition-editor').then((module) => ({ default: module.ArtworkEditorPage })),
 )
-const PreviewPage = lazy(() =>
+const PreviewPage = lazyRoute(() =>
   import('@/features/admin/exhibition-editor').then((module) => ({ default: module.PreviewPage })),
 )
-const MembersPage = lazy(() =>
+const MembersPage = lazyRoute(() =>
   import('@/features/admin/members').then((module) => ({ default: module.MembersPage })),
 )
-const AdminSettingsPage = lazy(() =>
+const AdminSettingsPage = lazyRoute(() =>
   import('@/features/admin/settings').then((module) => ({ default: module.AdminSettingsPage })),
 )
-const StatsPage = lazy(() =>
+const StatsPage = lazyRoute(() =>
   import('@/features/admin/stats').then((module) => ({ default: module.StatsPage })),
 )
-const MemberStatsPage = lazy(() =>
+const MemberStatsPage = lazyRoute(() =>
   import('@/features/admin/stats').then((module) => ({ default: module.MemberStatsPage })),
 )
 
@@ -113,6 +116,12 @@ export const router = createBrowserRouter([
             ),
           },
           { path: paths.passwordReset, element: <PasswordResetPage /> },
+          /**
+           * A-4 계정 연결. **`RedirectIfAuthed`를 씌우지 않는다** — 이미 로그인한
+           * 사람이 다른 소셜 계정을 연결하러 올 수 있고, 서버의 연결 티켓이
+           * 유일한 통행증이다(소셜 문서 §5).
+           */
+          { path: paths.socialLink, element: <SocialLinkPage /> },
           {
             path: paths.passwordChange,
             element: (

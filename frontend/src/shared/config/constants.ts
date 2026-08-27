@@ -15,6 +15,14 @@ export const CALENDAR_DEFAULT_DAYS = 7
 /** 관리자 달력 추가 로드 단위 */
 export const CALENDAR_PAGE_SIZE = 30
 
+/**
+ * 관람 현황 조회 범위 — B-1-1은 30일 (UX 문서 §3.17, GAP-16)
+ *
+ * B-1의 최근 7일은 여기에 없다. 그 창은 **서버가 KST 오늘을 기준으로** 정한다 —
+ * 단말 시계로 범위를 역산하면 자정 전후에 화면과 서버의 "오늘"이 갈라진다(PRD §6.1).
+ */
+export const STATS_MEMBER_DAYS = 30
+
 /** 회원 목록 페이지 크기 (API 문서 §9.13) */
 export const MEMBER_PAGE_SIZE = 30
 
@@ -24,11 +32,11 @@ export const ARTWORK_VIEW_DWELL_MS = 1500
 /** 자동 저장 디바운스(ms) — UX 문서 §3.12 */
 export const AUTOSAVE_DEBOUNCE_MS = 1200
 
-/** 이미지 처리 폴링 (API 문서 §9.9) */
-export const IMAGE_POLL_INTERVAL_MS = 2000
-export const IMAGE_POLL_TIMEOUT_MS = 60000
-
-/** 업로드 동시 실행 수 (API 문서 §11.2) */
+/**
+ * 업로드 동시 실행 수 (API 문서 §11.2)
+ *
+ * 이미지 처리는 완료 통지 요청 안에서 동기로 끝나므로 폴링 상수가 없다(API 문서 §9.9).
+ */
 export const UPLOAD_CONCURRENCY = 3
 
 /** 업로드 제한 (API 문서 §9.8) */
@@ -64,6 +72,8 @@ export const GESTURE = {
   dismissDistance: 120,
   dismissVelocity: 0.5,
   longPressMs: 400,
+  /** 당겨서 새로고침 임계 (UX 문서 §7) */
+  pullDistance: 80,
   doubleTapMs: 300,
   zoomMax: 4,
 } as const

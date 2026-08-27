@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
 import { SaveIndicator } from '@/features/admin/exhibition-editor/components/SaveIndicator'
-import { useAutoSave } from '@/features/admin/exhibition-editor/hooks/useAutoSave'
+import { readLocalDraft, useAutoSave } from '@/features/admin/exhibition-editor/hooks/useAutoSave'
 import type { ExhibitionMetaForm } from '@/features/admin/exhibition-editor/model/editorSchemas'
 import { LIMITS } from '@/shared/config/constants'
 import { screens } from '@/shared/config/messages'
@@ -22,11 +22,24 @@ export type ThemeEditorFormProps = {
 }
 
 export function ThemeEditorForm({ date, initialValues, save }: ThemeEditorFormProps) {
-  const [values, setValues] = useState<ExhibitionMetaForm>(initialValues)
+  const scope = `${date}:meta`
+
+  /**
+   * 저장에 실패해 남아 있는 원고가 있으면 **그것으로 시작한다.**
+   * 서버 값으로 덮으면 잃은 것이 무엇인지도 모른 채 사라진다(RISK-1, UX §3.12).
+   */
+  const [recovered] = useState(() => readLocalDraft<ExhibitionMetaForm>(scope))
+  const [values, setValues] = useState<ExhibitionMetaForm>(recovered ?? initialValues)
+
+  // 초과분은 서버가 거절한다. 저장을 멈추고 **어느 필드가 문제인지** 그 자리에 알린다(UX §3.13).
+  const titleTooLong = values.title.length > LIMITS.exhibitionTitle
+  const themeTooLong = values.theme.length > LIMITS.exhibitionTheme
+  const tooLong = titleTooLong || themeTooLong
+
   const autoSave = useAutoSave<ExhibitionMetaForm>({
-    scope: `${date}:meta`,
+    scope,
     value: values,
-    enabled: true,
+    enabled: !tooLong,
     save,
   })
 
@@ -41,10 +54,12 @@ export function ThemeEditorForm({ date, initialValues, save }: ThemeEditorFormPr
         <FieldGroup
           id="exhibition-title"
           label={screens.editor.titleLabel}
+          error={titleTooLong ? screens.editor.tooLong : undefined}
           trailing={<CharCounter current={values.title.length} max={LIMITS.exhibitionTitle} />}
         >
           <TextField
             id="exhibition-title"
+            invalid={titleTooLong}
             value={values.title}
             onChange={(event) => setValues((current) => ({ ...current, title: event.target.value }))}
           />
@@ -54,11 +69,14 @@ export function ThemeEditorForm({ date, initialValues, save }: ThemeEditorFormPr
           id="exhibition-theme"
           label={screens.editor.themeLabel}
           hint={screens.editor.themeHint}
+          error={themeTooLong ? screens.editor.tooLong : undefined}
           trailing={<CharCounter current={values.theme.length} max={LIMITS.exhibitionTheme} />}
         >
           <TextArea
             id="exhibition-theme"
             rows={8}
+            autoGrow
+            invalid={themeTooLong}
             value={values.theme}
             onChange={(event) => setValues((current) => ({ ...current, theme: event.target.value }))}
           />

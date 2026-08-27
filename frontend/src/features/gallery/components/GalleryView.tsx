@@ -15,9 +15,12 @@ export type GalleryViewProps = {
   themeTo: string
   artworkPath: (artworkId: Uuid) => string
   onPrefetch?: (artworkId: Uuid) => void
+  onRetryImage?: () => void
+  /** 아직 올라오지 않은 자리의 문구(미리보기) */
+  pendingLabel?: string
 }
 
-export function GalleryView({ exhibition, themeTo, artworkPath, onPrefetch }: GalleryViewProps) {
+export function GalleryView({ exhibition, themeTo, artworkPath, onPrefetch, onRetryImage, pendingLabel }: GalleryViewProps) {
   return (
     <>
       <ExhibitionHeader
@@ -26,7 +29,13 @@ export function GalleryView({ exhibition, themeTo, artworkPath, onPrefetch }: Ga
         carriedOverLabel={exhibition.carriedOverLabel}
         themeTo={themeTo}
       />
-      <ArtworkGrid artworks={exhibition.artworks} artworkPath={artworkPath} onPrefetch={onPrefetch} />
+      <ArtworkGrid
+        artworks={exhibition.artworks}
+        artworkPath={artworkPath}
+        onPrefetch={onPrefetch}
+        onRetryImage={onRetryImage}
+        pendingLabel={pendingLabel}
+      />
     </>
   )
 }

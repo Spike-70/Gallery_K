@@ -3,7 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom'
 
 import { useSessionStore } from '@/entities/session/model/sessionStore'
 import { paths, loginPathWithNext } from '@/app/router/paths'
-import { Spinner } from '@/shared/ui'
+import { ScreenSkeleton } from '@/shared/ui'
 import { status as statusMessages } from '@/shared/config/messages'
 
 /**
@@ -13,13 +13,9 @@ import { status as statusMessages } from '@/shared/config/messages'
  * 새로고침마다 로그인 화면이 번쩍인다.
  */
 
-/** 부팅 중 스플래시. 흰 화면을 만들지 않는다(UX §10). */
+/** 부팅 중 자리. 흰 화면도, 전체 화면 스피너도 만들지 않는다(UX §10, DS §10). */
 function BootSplash() {
-  return (
-    <div className="flex min-h-screen items-center justify-center" role="status" aria-live="polite">
-      <Spinner size="lg" label={statusMessages.loading} />
-    </div>
-  )
+  return <ScreenSkeleton label={statusMessages.loading} />
 }
 
 /** 회원 전용 경로 */

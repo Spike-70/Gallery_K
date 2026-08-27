@@ -2,6 +2,7 @@ import { useState } from 'react'
 
 import { useSettingsQuery, useUpdateSettingsMutation } from '@/entities/appSetting/api/queries'
 import { useCreateNoticeMutation, useDeleteNoticeMutation, useNoticesQuery } from '@/entities/notice/api/queries'
+import { ERROR_CODES, isApiError } from '@/shared/api/ApiError'
 import { resolveErrorMessage } from '@/shared/api/errorMessages'
 import { LIMITS } from '@/shared/config/constants'
 import { actions, screenTitles, screens, status } from '@/shared/config/messages'
@@ -41,9 +42,17 @@ export function AdminSettingsPage() {
   const [endsOn, setEndsOn] = useState('')
   const [body, setBody] = useState('')
   const [noticeError, setNoticeError] = useState<string | null>(null)
+  /** 기간이 겹친 상대 공지 — 그 공지로 데려가지 않으면 무엇과 겹쳤는지 알 수 없다(UX §3.16). */
+  const [conflictNoticeId, setConflictNoticeId] = useState<string | null>(null)
+
+  /** 서버가 상대 공지 id를 주지 않으면 화면이 가진 목록에서 겹치는 기간을 찾는다. */
+  const findOverlapping = (): string | null =>
+    noticesQuery.data?.find((notice) => notice.startsOn <= endsOn && startsOn <= notice.endsOn)?.id ??
+    null
 
   const submitNotice = async () => {
     setNoticeError(null)
+    setConflictNoticeId(null)
     try {
       await createNotice.mutateAsync({ startsOn, endsOn, body })
       setStartsOn('')
@@ -51,6 +60,10 @@ export function AdminSettingsPage() {
       setBody('')
     } catch (error) {
       setNoticeError(resolveErrorMessage(error))
+      if (isApiError(error) && error.code === ERROR_CODES.noticePeriodOverlap) {
+        const conflict = error.details?.conflict_notice_id
+        setConflictNoticeId(typeof conflict === 'string' ? conflict : findOverlapping())
+      }
     }
   }
 
@@ -74,7 +87,11 @@ export function AdminSettingsPage() {
         ) : (
           <ul className="list-none p-0">
             {noticesQuery.data.map((notice) => (
-              <li key={notice.id} className="flex items-start justify-between gap-4 border-b border-border-default py-3">
+              <li
+                key={notice.id}
+                id={`notice-${notice.id}`}
+                className="flex items-start justify-between gap-4 border-b border-border-default py-3"
+              >
                 <div className="flex flex-col gap-1">
                   <span className="tabular text-caption text-tertiary">
                     {notice.startsOn} ~ {notice.endsOn}
@@ -91,9 +108,21 @@ export function AdminSettingsPage() {
 
         <div className="flex flex-col gap-4 rounded-md border border-border-default p-4">
           {noticeError ? (
-            <p role="alert" className="text-caption text-danger">
-              {noticeError}
-            </p>
+            <div role="alert" className="flex flex-col gap-1">
+              <p className="text-caption text-danger">{noticeError}</p>
+              {conflictNoticeId ? (
+                <TextButton
+                  tone="accent"
+                  onClick={() => {
+                    document
+                      .getElementById(`notice-${conflictNoticeId}`)
+                      ?.scrollIntoView({ block: 'center' })
+                  }}
+                >
+                  {screens.adminSettings.noticeConflictLink}
+                </TextButton>
+              ) : null}
+            </div>
           ) : null}
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -158,14 +187,18 @@ export function AdminSettingsPage() {
               <li key={setting.key} className="flex flex-col gap-2 border-b border-border-default py-4">
                 {setting.valueType === 'boolean' ? (
                   <Switch
-                    label={setting.key}
+                    label={screens.settingLabels[setting.key] ?? setting.key}
                     description={setting.description}
                     checked={Boolean(setting.value)}
                     disabled={!setting.isMutable}
                     onCheckedChange={(checked) => updateSettings.mutate({ [setting.key]: checked })}
                   />
                 ) : (
-                  <FieldGroup id={`setting-${setting.key}`} label={setting.key} hint={setting.description}>
+                  <FieldGroup
+                    id={`setting-${setting.key}`}
+                    label={screens.settingLabels[setting.key] ?? setting.key}
+                    hint={setting.description}
+                  >
                     <TextField
                       id={`setting-${setting.key}`}
                       defaultValue={String(setting.value)}

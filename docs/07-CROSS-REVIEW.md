@@ -135,10 +135,23 @@
 |---|---|---|
 | 표준 응답 봉투 · 오류 코드 카탈로그 | `02-API-SPEC` §2.2, §5 | 백엔드 §6.2, 프런트 §7.1, UX §5.4 |
 | 열거형 값 | `01-DATABASE-MODEL` §5 | API §3, 백엔드 `models/enums.py`, 프런트 `shared/types/enums.ts` |
-| 엔드포인트 경로 | `02-API-SPEC` §4 | 백엔드 `api/v1/*`, 프런트 `shared/api/endpoints.ts` |
+| 엔드포인트 경로 | `02-API-SPEC` §4 | 백엔드 `api/routes/*`, 프런트 `shared/api/endpoints.ts` |
 | 화면 경로 | `05-FRONTEND` §5.1 | UX §2.1, `app/router/paths.ts` |
 | 디자인 토큰 | `03-DESIGN-SYSTEM` §3–§6 | `tailwind.config.js`, `tokens.css` |
 | 컴포넌트 카탈로그 | `03-DESIGN-SYSTEM` §8 | 프런트 §4.2 소속 판정표 |
 | 마이크로카피 | `06-USER-EXPERIENCE` §5 | `shared/config/messages.ts` |
-| 도메인 규칙(발행·연장·백필·이어쓰기) | `PRD` §4.3 → `04-BACKEND` §7.1–7.2 | DB §6.1, API §3.9, UX §3.11 |
+| 도메인 규칙(발행·연장·백필·이어쓰기) | `PRD` §4.3 → `04-BACKEND` §9 | DB §6, API §3.9, UX §3.11 |
 | 상수(12점 · 30개 · 300자 · 90일 · 21시) | `01-DATABASE-MODEL` §4.9 `app_setting` | 전 문서 |
+
+---
+
+## 5. v2 개정으로 무효화된 항목
+
+`01-DATABASE-MODEL`·`04-BACKEND-ARCHITECTURE` v2.0에서 구조가 바뀌어 아래 결정은 더 이상 유효하지 않다. 위 표의 기록은 이력으로 남겨 둔다.
+
+| 항목 | 무효 사유 |
+|---|---|
+| X-09 (미디어 서명 쿠키 갱신 주체) | 서명 쿠키를 폐지하고 presigned URL 단일 수단으로 전환. 갱신할 자격 상태 자체가 없다 |
+| X-14 (`media_signing_mode` 캡슐화) · X-26 (해당 설정 키 시드) | 서명 방식이 하나뿐이므로 설정 키를 없애고 `media_url_ttl_seconds`로 대체 |
+| X-16의 "발송 워커 §9.2" 참조 | 워커 Lambda를 폐지. 같은 규칙이 스케줄 루틴(백엔드 §11)에 있다 |
+| `02-API-SPEC` §6.4·§6.5·§8.3·§11.1의 "미디어 쿠키" 표기 | 위 X-09과 같은 사유. v1.0 본문에 남아 있던 표기를 제거했다(백엔드 구현 시 확인) |

@@ -9,6 +9,7 @@ import { Icon } from '@/shared/ui/Icon'
  * 플로팅 라벨을 쓰지 않는다 — 축소된 라벨이 12px 이하가 되어 DS-3과 충돌한다.
  */
 export type FieldGroupProps = {
+  ref?: React.Ref<HTMLDivElement>
   id: string
   label: string
   hint?: ReactNode
@@ -25,10 +26,10 @@ export function fieldIds(id: string) {
   return { hintId: `${id}-hint`, errorId: `${id}-error` }
 }
 
-export function FieldGroup({ id, label, hint, error, trailing, children, className }: FieldGroupProps) {
+export function FieldGroup({ id, label, hint, error, trailing, children, className, ref }: FieldGroupProps) {
   const { hintId, errorId } = fieldIds(id)
   return (
-    <div className={cn('flex flex-col gap-2', className)}>
+    <div ref={ref} className={cn('flex flex-col gap-2', className)}>
       {/*
         필수 여부는 라벨 텍스트가 아니라 입력 요소의 `required`가 전달한다.
         라벨에 "(필수)"를 덧붙이면 스크린리더가 모든 필드에서 그 말을 반복한다.
@@ -41,7 +42,7 @@ export function FieldGroup({ id, label, hint, error, trailing, children, classNa
 
       {(hint || trailing || error) && (
         <div className="flex items-start justify-between gap-2">
-          <div className="min-h-[1.25em] flex-1">
+          <div className="gk-slot-hint flex-1">
             {error ? (
               // 오류는 경계선 색 + 아이콘 + 메시지의 3중 표기다(DS-5).
               <p id={errorId} role="alert" className="flex items-center gap-1 text-caption text-danger">

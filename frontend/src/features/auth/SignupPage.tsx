@@ -9,11 +9,12 @@ import { useSignup } from '@/features/auth/hooks/useSignup'
 import { PushPermissionPrompt } from '@/features/notification'
 import { LIMITS } from '@/shared/config/constants'
 import { actions, screenTitles, screens } from '@/shared/config/messages'
-import { BackLink, Button, FieldGroup, TextField, TextLink } from '@/shared/ui'
+import { BackLink, Button, FieldGroup, Icon, TextField, TextLink } from '@/shared/ui'
 
 /** D. 회원가입 — UX 설계서 §3.3. 필수 입력은 3개뿐이며 목표는 60초다. */
 export function SignupPage() {
-  const { form, submit, bannerMessage, closed, showNotifyPrompt, finishOnboarding, isSubmitting } = useSignup()
+  const { form, submit, bannerMessage, passwordSatisfied, phoneTaken, closed, showNotifyPrompt, finishOnboarding, isSubmitting } =
+    useSignup()
   const { control, register, formState } = form
 
   // 가입 잠금은 화면 전체를 대체한다(UX §3.3).
@@ -60,7 +61,16 @@ export function SignupPage() {
 
         <PasswordField
           label={screens.signup.passwordLabel}
-          hint={screens.signup.passwordHint}
+          hint={
+            passwordSatisfied ? (
+              <span className="flex items-center gap-1 text-accent">
+                <Icon name="check" size="sm" className="h-4 w-4" />
+                {screens.signup.passwordOk}
+              </span>
+            ) : (
+              screens.signup.passwordHint
+            )
+          }
           autoComplete="new-password"
           error={formState.errors.password?.message}
           disabled={isSubmitting}
@@ -101,11 +111,12 @@ export function SignupPage() {
         </Button>
       </form>
 
-      <div className="mt-6 flex justify-center">
-        <TextLink to={paths.login} tone="tertiary">
-          {actions.goLogin}
-        </TextLink>
-      </div>
+      {/* `로그인하러 가기`는 **이미 가입된 번호일 때만** 나온다(UX §3.3 오류표). */}
+      {phoneTaken ? (
+        <div className="mt-6 flex justify-center">
+          <TextLink to={paths.login}>{actions.goLogin}</TextLink>
+        </div>
+      ) : null}
 
       <BackLink to={paths.landing} label={actions.backHome} />
 

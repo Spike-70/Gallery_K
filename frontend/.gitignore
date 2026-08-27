@@ -23,6 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 
-# 로컬 환경 변수 (`.env`는 비밀값이 없어 저장소에 포함한다)
+# 로컬 환경 변수
+# `.env`·`.env.development`·`.env.production`은 비밀값이 없어 저장소에 포함한다.
+# `VITE_` 변수는 전부 번들에 실리므로 비밀값을 둘 자리가 애초에 없다.
 .env.local
 .env.*.local

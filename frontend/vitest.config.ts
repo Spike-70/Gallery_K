@@ -21,5 +21,8 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
+    // `stubApi`가 `fetch`를 갈아 끼운다. 테스트마다 원래대로 되돌린다.
+    unstubGlobals: true,
+    restoreMocks: true,
   },
 })

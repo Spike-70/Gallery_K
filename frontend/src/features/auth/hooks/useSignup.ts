@@ -5,7 +5,9 @@ import { useNavigate } from 'react-router-dom'
 
 import { paths } from '@/shared/config/paths'
 import { useSignupMutation } from '@/entities/session/api/queries'
+import { hasAskedNotifyPermission } from '@/features/notification'
 import { type SignupForm, signupSchema } from '@/features/auth/model/schemas'
+import { LIMITS } from '@/shared/config/constants'
 import { ERROR_CODES, isApiError } from '@/shared/api/ApiError'
 import { applyApiError } from '@/shared/lib/formErrors'
 import { normalizePhone } from '@/shared/lib/phone'
@@ -21,6 +23,7 @@ export function useSignup() {
   const mutation = useSignupMutation()
   const [bannerMessage, setBannerMessage] = useState<string | null>(null)
   const [closed, setClosed] = useState(false)
+  const [phoneTaken, setPhoneTaken] = useState(false)
   const [showNotifyPrompt, setShowNotifyPrompt] = useState(false)
 
   const form = useForm<SignupForm>({
@@ -29,8 +32,15 @@ export function useSignup() {
     defaultValues: { phone: '', password: '', name: '', agreedTerms: false as true },
   })
 
+  /**
+   * UX §3.3 — 비밀번호 힌트는 **실시간**으로 바뀐다. 흐릿한 규칙을 외우게 하지 않고
+   * 지금 충족했는지를 그 자리에서 보여준다. 검증(제출 차단)은 여전히 스키마가 한다.
+   */
+  const passwordSatisfied = form.watch('password').length >= LIMITS.passwordMin
+
   const submit = form.handleSubmit(async (values) => {
     setBannerMessage(null)
+    setPhoneTaken(false)
     try {
       await mutation.mutateAsync({
         phone: normalizePhone(values.phone),
@@ -38,7 +48,9 @@ export function useSignup() {
         name: values.name,
         agreedTerms: values.agreedTerms,
       })
-      setShowNotifyPrompt(true)
+      // 이미 `나중에`를 누른 적이 있으면 다시 묻지 않는다(UX §3.3). 설정에서 언제든 켤 수 있다.
+      if (hasAskedNotifyPermission()) navigate(paths.gallery, { replace: true })
+      else setShowNotifyPrompt(true)
     } catch (error) {
       if (isApiError(error) && error.code === ERROR_CODES.signupClosed) {
         setClosed(true)
@@ -46,6 +58,7 @@ export function useSignup() {
       }
       if (isApiError(error) && error.code === ERROR_CODES.signupPhoneTaken) {
         form.setError('phone', { type: 'server', message: error.message })
+        setPhoneTaken(true)
         return
       }
       setBannerMessage(applyApiError(error, form.setError))
@@ -61,6 +74,9 @@ export function useSignup() {
     form,
     submit,
     bannerMessage,
+    passwordSatisfied,
+    /** `이미 가입된 번호입니다.` — 이때만 `로그인하러 가기`를 함께 보여준다(UX §3.3) */
+    phoneTaken,
     closed,
     showNotifyPrompt,
     finishOnboarding,

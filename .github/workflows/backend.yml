@@ -1,0 +1,107 @@
+# 백엔드 파이프라인 (백엔드 문서 §14)
+#
+#   검증(린트·타입·아키텍처 계약·의존성 점검·테스트)
+#     → 마이그레이션 독립 실행(실패 시 배포 중단)
+#     → 배포 → 스모크 → 실패 시 롤백
+#
+# 여기에는 검증 단계까지 정의한다. 배포는 자격증명이 붙는 시점에 이어 붙인다.
+
+name: backend
+
+on:
+  push:
+    branches: [main]
+    paths: ["backend/**", ".github/workflows/backend.yml"]
+  pull_request:
+    paths: ["backend/**", ".github/workflows/backend.yml"]
+
+defaults:
+  run:
+    working-directory: backend
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: gallery
+          POSTGRES_PASSWORD: gallery
+          POSTGRES_DB: gallery_k_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 10s
+          --health-timeout 5s --health-retries 5
+
+    env:
+      # 통합 테스트는 이 DB를 쓴다. 없으면 pgserver 임시 인스턴스로 대체된다.
+      TEST_DATABASE_URL: postgresql+psycopg://gallery:gallery@localhost:5432/gallery_k_test
+      APP_ENV: dev
+      JWT_SECRET: ci-secret-value-that-is-long-enough-000000
+      DATABASE_URL: postgresql+psycopg://gallery:gallery@localhost:5432/gallery_k_test
+      MEDIA_BUCKET: gallery-k-ci
+      AWS_ACCESS_KEY_ID: ci-access-key
+      AWS_SECRET_ACCESS_KEY: ci-secret-key
+      AWS_DEFAULT_REGION: ap-northeast-2
+      CURATOR_SEED_PHONE: "01000000000"
+      CURATOR_SEED_NAME: 큐레이터
+      CURATOR_SEED_PASSWORD: ci-curator-password
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements-dev.txt
+
+      - name: 의존성 설치
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install --upgrade "pip<26.2"
+          .venv/bin/pip install -r requirements-dev.txt
+
+      - name: 린트 (환경변수·현재시각 직접 접근 금지 포함)
+        run: make lint
+
+      - name: 타입
+        run: make typecheck
+
+      - name: 계층 계약
+        run: make arch
+
+      - name: 의존성 취약점
+        run: make audit
+
+      - name: 테스트
+        run: make test
+
+      - name: 마이그레이션 왕복
+        run: |
+          .venv/bin/alembic upgrade head
+          .venv/bin/alembic downgrade base
+          .venv/bin/alembic upgrade head
+
+      - name: ARM64 패키지 빌드 (문서 §2)
+        run: make package-arm64
+
+      - name: 패키지에 x86 바이너리가 없는지 확인
+        run: |
+          python - <<'PY'
+          import struct, sys, zipfile
+
+          machines = set()
+          with zipfile.ZipFile("dist/arm64/layer-deployment.zip") as bundle:
+              for name in bundle.namelist():
+                  if not name.endswith(".so"):
+                      continue
+                  head = bundle.read(name)[:20]
+                  if head[:4] == b"\x7fELF":
+                      machines.add(struct.unpack_from("<H", head, 18)[0])
+          if machines != {0xB7}:  # EM_AARCH64
+              print(f"AArch64가 아닌 바이너리가 섞였습니다: {machines}", file=sys.stderr)
+              raise SystemExit(1)
+          print(f"네이티브 확장 전부 AArch64 ({len(machines)} 아키텍처)")
+          PY

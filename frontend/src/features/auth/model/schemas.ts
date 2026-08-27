@@ -50,3 +50,23 @@ export const passwordResetConfirmSchema = z.object({
   newPassword: passwordField,
 })
 export type PasswordResetConfirmForm = z.infer<typeof passwordResetConfirmSchema>
+
+/**
+ * A-4 계정 연결 — 소셜 문서 §5.
+ *
+ * 두 모드가 **다른 스키마**를 쓴다. 하나로 합쳐 필드를 선택적으로 두면, 어느 필드가
+ * 필수인지가 런타임 조건으로 흩어진다.
+ */
+export const socialLinkSchema = z.object({
+  phone: phoneField,
+  // 로그인과 같은 이유로 길이 정책을 검사하지 않는다.
+  password: z.string().min(1, validation.passwordRequired),
+})
+export type SocialLinkForm = z.infer<typeof socialLinkSchema>
+
+export const socialSignupSchema = z.object({
+  phone: phoneField,
+  name: z.string().min(1, validation.nameRequired).max(LIMITS.memberName, validation.nameTooLong),
+  agreedTerms: z.literal(true, { message: validation.termsRequired }),
+})
+export type SocialSignupForm = z.infer<typeof socialSignupSchema>

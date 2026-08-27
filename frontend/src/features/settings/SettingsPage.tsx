@@ -2,6 +2,7 @@ import { useSessionStore } from '@/entities/session/model/sessionStore'
 import { AccountSection } from '@/features/settings/components/AccountSection'
 import { FontScaleSection } from '@/features/settings/components/FontScaleSection'
 import { NotifySection } from '@/features/settings/components/NotifySection'
+import { SocialSection } from '@/features/settings/components/SocialSection'
 import { WithdrawSection } from '@/features/settings/components/WithdrawSection'
 import { useUpdateSettings } from '@/features/settings/hooks/useUpdateSettings'
 import { actions, screenTitles } from '@/shared/config/messages'
@@ -25,6 +26,8 @@ export function SettingsPage() {
         <NotifySection user={user} onChange={(patch) => mutation.mutate(patch)} />
         <Divider />
         <FontScaleSection user={user} onChange={(patch) => mutation.mutate(patch)} />
+        <Divider />
+        <SocialSection />
         <Divider />
         <AccountSection user={user} />
         <WithdrawSection />

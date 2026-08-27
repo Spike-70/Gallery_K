@@ -71,10 +71,10 @@ export type AdminSummary = {
 }
 
 /**
- * `SlotButton`의 시각 상태 6종 — 디자인 시스템 문서 §8.3
- * 서버 `image_status` 5종에 **메타데이터 완성 여부**가 곱해져 6종이 된다(S-9).
+ * `SlotButton`의 시각 상태 5종 — 디자인 시스템 문서 §8.3
+ * 서버 `image_status` 4종에 **메타데이터 완성 여부**가 곱해져 5종이 된다(S-9).
  */
-export type SlotVisualState = 'empty' | 'uploading' | 'processing' | 'incomplete' | 'complete' | 'failed'
+export type SlotVisualState = 'empty' | 'uploading' | 'incomplete' | 'complete' | 'failed'
 
 export function slotVisualState(slot: AdminSlot): SlotVisualState {
   switch (slot.imageStatus) {
@@ -82,8 +82,6 @@ export function slotVisualState(slot: AdminSlot): SlotVisualState {
       return 'empty'
     case 'uploading':
       return 'uploading'
-    case 'processing':
-      return 'processing'
     case 'failed':
       return 'failed'
     case 'ready':

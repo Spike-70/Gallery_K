@@ -1,8 +1,10 @@
 import { Outlet } from 'react-router-dom'
 
+import { RouteAnnouncer } from '@/app/providers/RouteAnnouncer'
+
 import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus'
 import { status } from '@/shared/config/messages'
-import { Banner } from '@/shared/ui'
+import { Banner, TopBackSlot } from '@/shared/ui'
 
 /**
  * 관람자 공통 레이아웃 — 프런트엔드 아키텍처 문서 §3
@@ -23,7 +25,10 @@ export function GalleryLayout() {
         </div>
       )}
       <main id="gk-main" tabIndex={-1} className="gk-container-gallery py-6 focus:outline-none">
+        {/* 상단 좌측 `←` 자리. 대상은 화면의 `BackLink`가 채운다(UX §2.3). */}
+        <TopBackSlot className="-ml-3 mb-2" />
         <Outlet />
+        <RouteAnnouncer />
       </main>
     </div>
   )

@@ -20,6 +20,16 @@ export type UseAutoSaveOptions<T> = {
   save: (value: T) => Promise<void>
 }
 
+/**
+ * 저장에 실패해 로컬에 남아 있는 원고를 읽는다.
+ *
+ * **폼이 마운트되기 전에 읽어야 한다** — 초기값으로 써야 하기 때문이다. 그래서 훅이 아니다.
+ * 이것이 없으면 원고는 저장만 되고 **다시 열었을 때 사라진 것처럼 보인다**(RISK-1).
+ */
+export function readLocalDraft<T>(scope: string): T | null {
+  return localStore.getJson<T | null>(`${STORAGE_KEYS.editorDraft}:${scope}`, null)
+}
+
 export function useAutoSave<T>({ scope, value, enabled, save }: UseAutoSaveOptions<T>) {
   const [state, setState] = useState<SaveState>('idle')
   const latest = useRef(value)

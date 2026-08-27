@@ -1,21 +1,10 @@
-// [API]
-// import { endpoints } from '@/shared/api/endpoints'
-// import { httpClient } from '@/shared/api/httpClient'
-// import type { RawAppSetting } from '@/shared/api/types'
+import { endpoints } from '@/shared/api/endpoints'
+import { httpClient } from '@/shared/api/httpClient'
+import type { RawAppSetting } from '@/shared/api/types'
 
 import type { AppSetting } from '@/entities/appSetting/model/types'
 
-// [MOCK]
-import * as adminMock from '@/mocks/handlers/adminHandlers'
-
-function toSetting(raw: {
-  key: string
-  value: string | number | boolean
-  value_type: 'string' | 'number' | 'boolean'
-  description: string
-  is_mutable: boolean
-  updated_at: string | null
-}): AppSetting {
+function toSetting(raw: RawAppSetting): AppSetting {
   return {
     key: raw.key,
     value: raw.value,
@@ -28,12 +17,7 @@ function toSetting(raw: {
 
 /** `GET /admin/settings` */
 export async function fetchSettings(): Promise<AppSetting[]> {
-  // [API]
-  // const raw = await httpClient.get<{ settings: RawAppSetting[] }>(endpoints.admin.settings())
-  // return raw.settings.map(toSetting)
-
-  // [MOCK]
-  const raw = await adminMock.getAdminSettings()
+  const raw = await httpClient.get<{ settings: RawAppSetting[] }>(endpoints.admin.settings())
   return raw.settings.map(toSetting)
 }
 
@@ -41,13 +25,8 @@ export async function fetchSettings(): Promise<AppSetting[]> {
 export async function updateSettings(
   values: Record<string, string | number | boolean>,
 ): Promise<AppSetting[]> {
-  // [API]
-  // const raw = await httpClient.patch<{ settings: RawAppSetting[] }>(endpoints.admin.settings(), {
-  //   settings: values,
-  // })
-  // return raw.settings.map(toSetting)
-
-  // [MOCK]
-  const raw = await adminMock.updateAdminSettings(values)
+  const raw = await httpClient.patch<{ settings: RawAppSetting[] }>(endpoints.admin.settings(), {
+    settings: values,
+  })
   return raw.settings.map(toSetting)
 }

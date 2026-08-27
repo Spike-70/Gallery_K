@@ -7,6 +7,18 @@ import { useFocusTrap } from '@/shared/hooks/useFocusTrap'
 import { useLockBodyScroll } from '@/shared/hooks/useLockBodyScroll'
 import { Button } from '@/shared/ui/Button'
 
+/** 열려 있는 동안 `Esc`로 닫는다 — 두 다이얼로그가 같은 규칙을 공유한다(DS §8.1). */
+function useEscapeKey(open: boolean, onClose: () => void) {
+  useEffect(() => {
+    if (!open) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [open, onClose])
+}
+
 /**
  * Dialog — 확인이 필요한 결정(디자인 시스템 문서 §8.1)
  *
@@ -39,15 +51,7 @@ export function Dialog({
   const panelRef = useRef<HTMLDivElement>(null)
   useLockBodyScroll(open)
   useFocusTrap(panelRef, open)
-
-  useEffect(() => {
-    if (!open) return
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
-  }, [open, onClose])
+  useEscapeKey(open, onClose)
 
   if (!open) return null
 
@@ -108,6 +112,7 @@ export function AlertDialog({
   const panelRef = useRef<HTMLDivElement>(null)
   useLockBodyScroll(open)
   useFocusTrap(panelRef, open)
+  useEscapeKey(open, onClose)
 
   if (!open) return null
 

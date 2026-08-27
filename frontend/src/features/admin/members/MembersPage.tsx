@@ -109,7 +109,7 @@ export function MembersPage() {
       {listQuery.isPending ? (
         <div className="flex flex-col gap-2">
           {Array.from({ length: 6 }, (_, index) => (
-            <Skeleton key={index} className="h-20 w-full" />
+            <Skeleton key={index} className="h-row-lg w-full" />
           ))}
         </div>
       ) : listQuery.isError ? (
